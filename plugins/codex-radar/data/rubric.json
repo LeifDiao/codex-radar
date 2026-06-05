@@ -1,0 +1,349 @@
+{
+  "schemaVersion": "2.0",
+
+  "categories": {
+    "communication": {
+      "name": {"en": "Communication", "zh": "沟通力"},
+      "description": {
+        "en": "How clearly you direct Codex through text — clarity, context, and course-correction.",
+        "zh": "你怎么用文字驱动 Codex — 清晰度、上下文、纠偏能力。"
+      },
+      "dimensionIds": ["lock_on", "scene_setting", "steering"]
+    },
+    "engineering": {
+      "name": {"en": "Engineering", "zh": "工程力"},
+      "description": {
+        "en": "How well you drive the Codex platform — tools, durable project setup, steady tempo.",
+        "zh": "你把 Codex 平台用到几成 — 工具调度、持久化设置、推进节奏。"
+      },
+      "dimensionIds": ["toolcraft", "architecture", "tempo"]
+    },
+    "outcome": {
+      "name": {"en": "Outcome", "zh": "成效"},
+      "description": {
+        "en": "What actually gets shipped — efficiency, verification, and clean closure.",
+        "zh": "实际产出的质量 — 效率、验证、收尾干净度。"
+      },
+      "dimensionIds": ["efficiency", "proof_check", "completion"]
+    }
+  },
+
+  "dimensionOrder": [
+    "lock_on", "scene_setting", "steering",
+    "toolcraft", "architecture", "tempo",
+    "efficiency", "proof_check", "completion"
+  ],
+
+  "dimensions": {
+    "lock_on": {
+      "category": "communication",
+      "name": {"en": "Lock-On", "zh": "瞄准力"},
+      "shortName": {"en": "Lock-On", "zh": "瞄准"},
+      "description": {
+        "en": "Whether your directives give Codex a concrete target — goal, expected behavior, file paths, constraints.",
+        "zh": "你的指令是否给了 Codex 一个具体目标 — 目标、期望行为、文件路径、约束。"
+      },
+      "primaryPosition": "directing",
+      "signals": [
+        "signalsByPosition.directing.ratios.explicitGoal",
+        "signalsByPosition.directing.ratios.expectedBehavior",
+        "signalsByPosition.directing.ratios.filePath",
+        "signalsByPosition.directing.ratios.constraints",
+        "signalsByPosition.directing.ratios.errorLog",
+        "stats.averageHumanMessageLength"
+      ],
+      "baselineFormula": "35 + directing.explicitGoal * 20 + directing.expectedBehavior * 18 + directing.filePath * 18 + directing.constraints * 10 + directing.errorLog * 8 - max(0, 90 - stats.averageHumanMessageLength) * 0.08, clamped [0, 100]",
+      "adjustmentGuide": {
+        "upward": "keyMessages show terse but surgically precise instructions (file path + identifier + action in < 90 chars) — silent-expert precision, not low intent.",
+        "downward": "keyMessages show long messages that still lack a clear deliverable — length without a target."
+      }
+    },
+    "scene_setting": {
+      "category": "communication",
+      "name": {"en": "Scene Setting", "zh": "铺场力"},
+      "shortName": {"en": "Scene", "zh": "铺场"},
+      "description": {
+        "en": "How much useful context your opening messages carry before Codex starts acting.",
+        "zh": "Codex 动手之前，你的开场消息携带了多少有用的上下文。"
+      },
+      "primaryPosition": "opening",
+      "signals": [
+        "signalsByPosition.opening.ratios.expectedBehavior",
+        "signalsByPosition.opening.ratios.constraints",
+        "signalsByPosition.opening.ratios.filePath",
+        "signalsByPosition.opening.ratios.codeOrData",
+        "stats.averageHumanMessageLength"
+      ],
+      "baselineFormula": "30 + opening.expectedBehavior * 22 + opening.constraints * 16 + opening.filePath * 16 + opening.codeOrData * 14 + clamp(stats.averageHumanMessageLength / 7, 0, 12), clamped [0, 100]",
+      "adjustmentGuide": {
+        "upward": "Opening messages consistently paste real project context (file trees, configs, error logs, code) even without triggering keyword matches.",
+        "downward": "Opening messages are long but generic — length without project-specific information."
+      }
+    },
+    "steering": {
+      "category": "communication",
+      "name": {"en": "Steering", "zh": "校准力"},
+      "shortName": {"en": "Steer", "zh": "校准"},
+      "description": {
+        "en": "Quality of mid-session course-correction and verification requests when Codex drifts.",
+        "zh": "Codex 跑偏时，你纠偏和要求验证的质量。"
+      },
+      "primaryPosition": "correcting",
+      "signals": [
+        "signalsByPosition.directing.ratios.asksVerify",
+        "signalsByPosition.correcting.ratios.correction",
+        "signalsByPosition.confirming.ratios.confirmation",
+        "signalsByPosition.directing.ratios.errorLog",
+        "outcomeTotals.abortRatio"
+      ],
+      "baselineFormula": "38 + directing.asksVerify * 20 + correcting.correction * 16 + confirming.confirmation * 10 + directing.errorLog * 8 - outcomeTotals.abortRatio * 12, clamped [0, 100]",
+      "adjustmentGuide": {
+        "upward": "sampleExchanges show precise corrections with code/paths even without reasoning keywords (shows, doesn't tell).",
+        "downward": "Corrections are blunt ('no, wrong, redo') and never explain why — Codex can't learn from the feedback. Many aborted turns (outcomeTotals.abortRatio high)."
+      }
+    },
+
+    "toolcraft": {
+      "category": "engineering",
+      "name": {"en": "Toolcraft", "zh": "工具调度"},
+      "shortName": {"en": "Tools", "zh": "工具"},
+      "description": {
+        "en": "How deliberately the collaboration uses the Codex platform — shell, patch, plan updates, MCP, search, image, subagents — and how reliably commands succeed.",
+        "zh": "协作中对 Codex 平台的有意使用 — shell、补丁、plan 更新、MCP、搜索、图像、子代理 — 以及命令的成功率。"
+      },
+      "primaryPosition": "global",
+      "signals": [
+        "toolcraftSummary.byCategory",
+        "toolcraftSummary.commandSuccessRate",
+        "toolcraftSummary.planModeEntries",
+        "toolcraftSummary.webSearchCalls",
+        "toolcraftSummary.browserCalls",
+        "toolcraftSummary.mcpCalls",
+        "toolcraftSummary.subagentCalls"
+      ],
+      "baselineFormula": "30 + min(20, count(toolcraftSummary.byCategory) * 4) + toolcraftSummary.commandSuccessRate * 18 + min(12, toolcraftSummary.planModeEntries * 3) + min(10, toolcraftSummary.webSearchCalls + toolcraftSummary.browserCalls + toolcraftSummary.mcpCalls) + min(10, toolcraftSummary.subagentCalls * 3), clamped [0, 100]",
+      "scoringPhilosophy": "Using shell + apply_patch competently is the baseline. Plan updates, MCP, search, and subagents add bonuses on top. A high command-success-rate matters. Reaching for advanced tools is rewarded; not reaching for them is not punished.",
+      "adjustmentGuide": {
+        "upward": "sessionFlows show plan updates that led to substantive multi-file patches, or subagent/MCP usage that advanced the work cleanly (no retry churn afterward).",
+        "downward": "Many failed shell commands (low commandSuccessRate), or advanced tools invoked but the work stalled afterward — tool theater without leverage."
+      }
+    },
+    "architecture": {
+      "category": "engineering",
+      "name": {"en": "Architecture", "zh": "工程脚手架"},
+      "shortName": {"en": "Arch", "zh": "脚手架"},
+      "description": {
+        "en": "Whether the project gives Codex durable context — AGENTS.md, .codex/.agents, git, manifests, README, tests.",
+        "zh": "项目是否为 Codex 提供了持久化的上下文 — AGENTS.md、.codex/.agents、git、依赖清单、README、测试。"
+      },
+      "primaryPosition": "global",
+      "signals": [
+        "projectAssets.hasAgentsMd",
+        "projectAssets.hasCodexDir",
+        "projectAssets.hasAgentsDir",
+        "projectAssets.hasGit",
+        "projectAssets.hasManifest",
+        "projectAssets.hasReadme",
+        "projectAssets.hasTestsDir",
+        "projectAssets.rootEntryCount"
+      ],
+      "baselineFormula": "25 + (projectAssets.hasAgentsMd ? 20 : 0) + ((projectAssets.hasCodexDir || projectAssets.hasAgentsDir) ? 12 : 0) + (projectAssets.hasGit ? 12 : 0) + (projectAssets.hasManifest ? 12 : 0) + (projectAssets.hasReadme ? 8 : 0) + (projectAssets.hasTestsDir ? 8 : 0) + min(8, projectAssets.rootEntryCount / 8), clamped [0, 100]",
+      "applicabilityRule": "If projectAssets.cwdResolved is false, mark this dimension N/A — the recorded project directory could not be located on this machine, so filesystem inspection isn't possible.",
+      "adjustmentGuide": {
+        "upward": "AGENTS.md is present and substantive; repo is well-scaffolded (git + manifest + tests) — durable context Codex can rely on across sessions.",
+        "downward": "No AGENTS.md and little structure — Codex re-learns the project every session."
+      }
+    },
+    "tempo": {
+      "category": "engineering",
+      "name": {"en": "Tempo", "zh": "推进节奏"},
+      "shortName": {"en": "Tempo", "zh": "节奏"},
+      "description": {
+        "en": "Whether work advances steadily without excessive aborts, context compactions, errors, or tool churn.",
+        "zh": "工作是否稳步推进，没有过多的中断、上下文压缩、错误或工具空转。"
+      },
+      "primaryPosition": "global",
+      "signals": [
+        "outcomeTotals.abortRatio",
+        "stats.contextCompactions",
+        "stats.errors",
+        "outcomeTotals.cleanEndRatio",
+        "outcomeTotals.toolsPerHumanMsg"
+      ],
+      "baselineFormula": "72 - outcomeTotals.abortRatio * 28 - min(14, stats.contextCompactions * 3) - min(12, stats.errors * 3) + min(10, outcomeTotals.cleanEndRatio * 10) - max(0, outcomeTotals.toolsPerHumanMsg - 10) * 2, clamped [0, 100]",
+      "adjustmentGuide": {
+        "upward": "sessionFlows show clean arcs (setup → build → verify → close) with few aborts and steady progress.",
+        "downward": "Sessions thrash — repeated aborts, many compactions, or huge tool-per-message counts without matching progress."
+      }
+    },
+
+    "efficiency": {
+      "category": "outcome",
+      "name": {"en": "Efficiency", "zh": "产出效率"},
+      "shortName": {"en": "Effic", "zh": "效率"},
+      "description": {
+        "en": "How much useful output per human message and per tool call — edits, distinct files, command success.",
+        "zh": "每条人类消息、每次工具调用产出的有效工作 — 编辑、覆盖文件、命令成功率。"
+      },
+      "primaryPosition": "global",
+      "signals": [
+        "outcomeTotals.editsPerHumanMsg",
+        "outcomeTotals.filesPerHumanMsg",
+        "toolcraftSummary.commandSuccessRate",
+        "outcomeTotals.cleanEndRatio",
+        "outcomeTotals.toolsPerHumanMsg"
+      ],
+      "baselineFormula": "35 + min(24, outcomeTotals.editsPerHumanMsg * 18) + min(16, outcomeTotals.filesPerHumanMsg * 18) + toolcraftSummary.commandSuccessRate * 12 + outcomeTotals.cleanEndRatio * 10 - max(0, outcomeTotals.toolsPerHumanMsg - 12) * 2, clamped [0, 100]",
+      "adjustmentGuide": {
+        "upward": "sessionOutcomes show a session that closed a task in 1-3 messages with multiple file edits — silent-expert efficiency.",
+        "downward": "High tool use but few distinct files touched — busywork, not real progress."
+      }
+    },
+    "proof_check": {
+      "category": "outcome",
+      "name": {"en": "Proof Check", "zh": "验证意识"},
+      "shortName": {"en": "Proof", "zh": "验证"},
+      "description": {
+        "en": "How consistently the work is backed by proof — tests, builds, lint, screenshots, renders, or explicit verification asks.",
+        "zh": "工作有多大程度被验证兜底 — 测试、构建、lint、截图、渲染，或明确的验证请求。"
+      },
+      "primaryPosition": "global",
+      "signals": [
+        "outcomeTotals.proofCommands",
+        "signalsByPosition.directing.ratios.asksVerify",
+        "projectAssets.hasTestsDir",
+        "toolcraftSummary.browserCalls",
+        "toolcraftSummary.imageCalls"
+      ],
+      "baselineFormula": "28 + min(34, outcomeTotals.proofCommands * 8) + directing.asksVerify * 18 + (projectAssets.hasTestsDir ? 8 : 0) + min(12, toolcraftSummary.browserCalls + toolcraftSummary.imageCalls), clamped [0, 100]",
+      "adjustmentGuide": {
+        "upward": "User runs real verification (tests/builds/lint pass in shell, screenshots/renders inspected) and reacts to the results.",
+        "downward": "Implementation work with no test/build/check anywhere — shipped on faith."
+      }
+    },
+    "completion": {
+      "category": "outcome",
+      "name": {"en": "Completion", "zh": "闭环完成"},
+      "shortName": {"en": "Done", "zh": "收尾"},
+      "description": {
+        "en": "Whether turns finish cleanly with a clear result rather than being left mid-turn or aborted.",
+        "zh": "回合是否带着明确结果干净收尾，而不是停在半途或被中断。"
+      },
+      "primaryPosition": "global",
+      "signals": [
+        "outcomeTotals.cleanEndRatio",
+        "stats.agentMessages",
+        "stats.turnCompletes",
+        "outcomeTotals.abortRatio",
+        "stats.errors"
+      ],
+      "baselineFormula": "45 + outcomeTotals.cleanEndRatio * 35 + min(10, (stats.agentMessages / max(1, stats.turnCompletes)) * 3) - outcomeTotals.abortRatio * 18 - min(8, stats.errors * 2), clamped [0, 100]",
+      "adjustmentGuide": {
+        "upward": "sessionFlows show turns consistently completing with a final agent message and no abandoned aborts.",
+        "downward": "Turns trail off or get aborted mid-work without resolution."
+      }
+    }
+  },
+
+  "scoring": {
+    "method": "baseline + adjustment",
+    "baselineSource": "deterministic formula from facts (see each dimension's baselineFormula). Compute it, clamp to [0,100], round.",
+    "adjustmentRange": [-15, 15],
+    "adjustmentRequirement": "Must cite specific keyMessages / sampleExchanges / sessionFlows evidence in reasoning. No evidence → adjustment = 0.",
+    "confidenceScaling": {
+      "note": "Apply AFTER the baseline, BEFORE the adjustment. Reflects how much data backs the score.",
+      "low": "score = 50 + (baseline - 50) * 0.75. Surface a 'limited data' note in the report and diagnosis.",
+      "medium": "score = 50 + (baseline - 50) * 0.9.",
+      "high": "no scaling."
+    },
+    "naHandling": {
+      "rule": "A dimension is N/A if projectProfile.naDimensions includes its id OR its applicabilityRule fires. N/A dimensions have score=null, grade=null, applicable=false, and are excluded from category and overall averages.",
+      "displayLabel": {"en": "N/A", "zh": "不适用"}
+    },
+    "categoryScore": "Average of the applicable dimensions in the category, rounded.",
+    "overallScore": "Weighted sum of category scores using projectProfile.categoryWeights, renormalized over categories that have a score. Rounded.",
+    "overallGradeNote": "Show the project profile next to the grade — a 'one-shot' B is not a 'long-running' B."
+  },
+
+  "grades": [
+    {"letter": "S", "range": [85, 100], "label": {"en": "In The Zone", "zh": "心流共振"}, "description": {"en": "You and Codex are perfectly in sync — seamless, high-leverage flow.", "zh": "你和 Codex 完美同步，协作高效精准。"}, "color": "#22c55e"},
+    {"letter": "A", "range": [70, 84], "label": {"en": "Synced Up", "zh": "默契搭档"}, "description": {"en": "Strong collaboration instincts — smooth and efficient most of the time.", "zh": "很好的协作直觉，大部分时候配合流畅。"}, "color": "#3b82f6"},
+    {"letter": "B", "range": [55, 69], "label": {"en": "Finding Groove", "zh": "稳步探索"}, "description": {"en": "Finding your rhythm — clear room to grow with specific improvements.", "zh": "正在找到节奏，进步空间明确。"}, "color": "#eab308"},
+    {"letter": "C", "range": [40, 54], "label": {"en": "Freestyling", "zh": "随性对话"}, "description": {"en": "Freestyle and intuitive — a bit of structure would go a long way.", "zh": "偏自由随性，加一些结构会让效果翻倍。"}, "color": "#f97316"},
+    {"letter": "D", "range": [0, 39], "label": {"en": "Day One", "zh": "初识旅程"}, "description": {"en": "Everyone starts here — small changes lead to big improvements.", "zh": "每个人都从这里开始，小改变带来大提升。"}, "color": "#ef4444"}
+  ],
+
+  "profiles": {
+    "one_shot": {
+      "label": {"en": "One-shot task", "zh": "一次性任务"},
+      "naDimensions": ["architecture", "tempo", "completion"],
+      "categoryWeights": {"communication": 0.5, "engineering": 0.1, "outcome": 0.4}
+    },
+    "feature_build": {
+      "label": {"en": "Feature build", "zh": "功能开发"},
+      "naDimensions": [],
+      "categoryWeights": {"communication": 0.34, "engineering": 0.33, "outcome": 0.33}
+    },
+    "long_running": {
+      "label": {"en": "Long-running project", "zh": "长期项目"},
+      "naDimensions": [],
+      "categoryWeights": {"communication": 0.3, "engineering": 0.4, "outcome": 0.3}
+    },
+    "learning": {
+      "label": {"en": "Learning / exploration", "zh": "学习探索"},
+      "naDimensions": ["efficiency", "completion"],
+      "categoryWeights": {"communication": 0.7, "engineering": 0.3, "outcome": 0}
+    }
+  },
+
+  "diagnosis": {
+    "purpose": "Independent of scoring. Turns the numbers into an actionable, evidence-grounded read of how this user works with Codex.",
+    "components": [
+      {"id": "collaborationProfile", "description": "120-180 words describing how this user collaborates with Codex. Reference real behavior from facts (message style, tool usage, proof habits). No personality archetypes."},
+      {"id": "coreDiagnosis", "description": "60-100 words naming the single strongest strength and the single most critical bottleneck, each with evidence and the concrete cost of the bottleneck."},
+      {"id": "crossDimensionReading", "description": "1-2 sentences interpreting how the dimension scores combine (e.g. 'high Lock-On + low Proof Check = you trust Codex's execution but not its judgment')."}
+    ],
+    "constraints": [
+      "Every claim cites evidence from keyMessages, sampleExchanges, sessionFlows, toolcraftSummary, or outcomeTotals.",
+      "Describe observable behavior, not personality. No fortune-teller tone.",
+      "Bilingual parity (en/zh) — same meaning, not a literal translation."
+    ]
+  },
+
+  "insight": {
+    "description": "ONE vivid 60-110 char hero line (bilingual) — a coach's wake-up call the user instantly recognizes. Often a tension (strong-X but weak-Y).",
+    "forbidden": ["Starting with 'Strength:' / '强项：' (that's coreDiagnosis)", "Raw scores / ratios", "Category names as badges", "Generic praise"]
+  },
+
+  "suggestions": {
+    "count": "MINIMUM 5, maximum 7. Never fewer than 5, even for high-scoring users.",
+    "priorityMapping": {
+      "D (0-39)": "high (required)",
+      "C (40-54)": "high (required)",
+      "B (55-69)": "medium (upgrade to high if clearly poor)",
+      "A (70-84)": "low (level-up move toward S)",
+      "S (85-100)": "low (refinement to lock in the strength, or cross-pollinate to weaker dims)"
+    },
+    "highScorerFillSources": [
+      "Within a strong dimension — push from 82 → 90+ with a next-level habit.",
+      "Cross-pollinate — apply a habit working in one dimension to a weaker one.",
+      "Platform leverage — a specific plan / subagent / MCP / proof move tied to the actual workflow.",
+      "Durable setup — AGENTS.md, tests, repo scaffolding the user hasn't invested in.",
+      "Risk reduction — even strong scoring can hide brittleness (e.g. ships with no tests)."
+    ],
+    "required": [
+      "dimensionId",
+      "priority (high/medium/low)",
+      "title (bilingual, < 18 chars)",
+      "body (bilingual, 1-2 sentences, specific)",
+      "evidence (bilingual, 1 sentence quoting/paraphrasing real session content)",
+      "promptRewrite (bilingual, a concrete pastable prompt to try next time)",
+      "expectedImpact (bilingual, e.g. '+10-15 Proof Check')"
+    ],
+    "principles": [
+      "No empty platitudes. Not 'verify more' — instead 'After the change, run the relevant test/build and paste me the result.'",
+      "Sort: high → medium → low; within a priority, by impact scope (largest first).",
+      "Every suggestion ships with a usable promptRewrite grounded in real evidence."
+    ]
+  }
+}

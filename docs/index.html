@@ -1,0 +1,496 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Codex Radar — Score how you collaborate with Codex</title>
+<meta name="description" content="Codex Radar reads your local Codex sessions; your Codex model scores them across 9 dimensions in 3 categories and writes a diagnosis with paste-ready prompt rewrites, rendered as a single-file HTML dashboard. Transparent rubric, runs in your own Codex session, 100% local.">
+<meta property="og:title" content="Codex Radar — Score how you collaborate with Codex">
+<meta property="og:description" content="9 dimensions × 3 categories. Your Codex model scores and writes the diagnosis against a transparent rubric. Paste-ready prompt rewrites. Single-file HTML dashboard. 100% local.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://leifdiao.github.io/codex-radar/">
+<style>
+  :root {
+    color-scheme: light;
+    --bg: #ffffff;
+    --bg-alt: #f7f7f8;
+    --bg-soft: #fbfbfc;
+    --ink: #0d0d0d;
+    --ink-2: #2a2b32;
+    --muted: #6e6e80;
+    --muted-2: #8e8ea0;
+    --line: #e6e6e9;
+    --line-2: #d9d9e3;
+    --accent: #10a37f;
+    --accent-ink: #0d8268;
+    --accent-soft: #ecf8f4;
+    --accent-soft-2: #def1ea;
+    --code-bg: #0d0d0d;
+    --code-ink: #ececf1;
+    --radius: 16px;
+    --radius-lg: 20px;
+    --shadow-sm: 0 1px 2px rgba(13,13,13,0.05);
+    --shadow: 0 1px 3px rgba(13,13,13,0.04), 0 8px 28px rgba(13,13,13,0.05);
+  }
+  * , *::before, *::after { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, Helvetica, Arial, "PingFang SC", "Microsoft YaHei", sans-serif;
+    background: var(--bg);
+    color: var(--ink);
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+  a { color: inherit; text-decoration: none; }
+  .wrap { max-width: 1080px; margin: 0 auto; padding: 0 28px; }
+
+  /* ── Nav ── */
+  .nav { position: sticky; top: 0; z-index: 50; background: rgba(255,255,255,0.82); backdrop-filter: saturate(180%) blur(14px); border-bottom: 1px solid var(--line); }
+  .nav-in { display: flex; align-items: center; justify-content: space-between; height: 60px; }
+  .brand { display: flex; align-items: center; gap: 9px; font-weight: 650; font-size: 16px; letter-spacing: -0.2px; }
+  .brand-mark { width: 26px; height: 26px; display: grid; place-items: center; color: var(--accent); }
+  .brand-mark svg { width: 100%; height: 100%; }
+  .nav-r { display: flex; align-items: center; gap: 8px; }
+  .nav-link { color: var(--muted); font-size: 14px; font-weight: 500; padding: 7px 10px; border-radius: 8px; transition: color .15s, background .15s; }
+  .nav-link:hover { color: var(--ink); background: var(--bg-alt); }
+  .lang-btn { background: var(--bg); border: 1px solid var(--line-2); color: var(--ink-2); padding: 6px 13px; border-radius: 999px; font-size: 13px; font-weight: 600; cursor: pointer; font-family: inherit; transition: all .15s; }
+  .lang-btn:hover { border-color: var(--accent); color: var(--accent-ink); }
+
+  /* ── Buttons ── */
+  .btn { display: inline-flex; align-items: center; gap: 7px; font-family: inherit; font-weight: 600; cursor: pointer; border: 1px solid transparent; transition: all .15s; white-space: nowrap; }
+  .btn-lg { padding: 13px 22px; border-radius: 999px; font-size: 15px; }
+  .btn-primary { background: var(--ink); color: #fff; }
+  .btn-primary:hover { background: #2b2b2b; transform: translateY(-1px); }
+  .btn-ghost { background: var(--bg); color: var(--ink); border-color: var(--line-2); }
+  .btn-ghost:hover { border-color: var(--ink); background: var(--bg-alt); }
+  .btn svg { width: 16px; height: 16px; }
+
+  /* ── Hero ── */
+  .hero { padding: 76px 0 64px; display: grid; grid-template-columns: 1.04fr 0.96fr; gap: 56px; align-items: center; }
+  .eyebrow { display: inline-flex; align-items: center; gap: 8px; padding: 5px 12px 5px 10px; background: var(--accent-soft); border: 1px solid var(--accent-soft-2); border-radius: 999px; font-size: 12px; font-weight: 700; letter-spacing: .3px; color: var(--accent-ink); margin-bottom: 20px; }
+  .eyebrow .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--accent); }
+  h1 { font-size: clamp(38px, 5.4vw, 58px); font-weight: 700; letter-spacing: -1.6px; line-height: 1.05; margin: 0 0 20px; color: var(--ink); }
+  h1 .g { color: var(--accent); }
+  .hero-sub { font-size: 17px; color: var(--muted); line-height: 1.62; margin: 0 0 28px; max-width: 520px; }
+  .hero-cta { display: flex; gap: 11px; flex-wrap: wrap; margin-bottom: 22px; }
+  .hero-trust { display: flex; gap: 18px; flex-wrap: wrap; font-size: 13px; color: var(--muted-2); font-weight: 500; }
+  .hero-trust span { display: inline-flex; align-items: center; gap: 6px; }
+  .hero-trust .tick { color: var(--accent); font-weight: 800; }
+
+  /* ── Preview card ── */
+  .preview { background: var(--bg); border: 1px solid var(--line); border-radius: var(--radius-lg); box-shadow: var(--shadow); overflow: hidden; }
+  .preview-head { display: flex; align-items: center; justify-content: space-between; padding: 13px 16px; border-bottom: 1px solid var(--line); background: var(--bg-soft); }
+  .preview-brand { display: flex; align-items: center; gap: 7px; font-size: 11px; font-weight: 700; letter-spacing: .8px; text-transform: uppercase; color: var(--muted); }
+  .preview-brand svg { width: 13px; height: 13px; color: var(--accent); }
+  .preview-meta { font-size: 11px; color: var(--muted-2); }
+  .preview-top { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 20px 18px 18px; }
+  .preview-profile { display: inline-flex; align-items: center; gap: 5px; font-size: 10px; font-weight: 700; letter-spacing: .4px; color: var(--accent-ink); background: var(--accent-soft); padding: 3px 9px; border-radius: 999px; margin-bottom: 9px; }
+  .preview-insight { font-size: 13px; line-height: 1.5; color: var(--ink-2); font-weight: 500; max-width: 230px; }
+  .preview-grade { text-align: right; }
+  .preview-grade .letter { font-size: 50px; font-weight: 800; line-height: 1; color: var(--accent); letter-spacing: -2px; }
+  .preview-grade .score { font-size: 11px; color: var(--muted); font-weight: 600; margin-top: 3px; }
+  .preview-cats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 9px; padding: 0 18px 16px; }
+  .pcat { padding: 11px 12px; border: 1px solid var(--line); border-radius: 11px; background: var(--bg-soft); }
+  .pcat-name { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .4px; color: var(--muted); margin-bottom: 7px; }
+  .pcat-row { display: flex; align-items: baseline; justify-content: space-between; }
+  .pcat-num { font-size: 19px; font-weight: 800; font-variant-numeric: tabular-nums; color: var(--ink); }
+  .pcat-grade { font-size: 10px; font-weight: 800; color: var(--accent-ink); }
+  .pbar { height: 5px; border-radius: 999px; background: var(--line); overflow: hidden; margin-top: 8px; }
+  .pbar > i { display: block; height: 100%; background: var(--accent); border-radius: 999px; }
+  .preview-foot { border-top: 1px solid var(--line); padding: 11px 18px; display: flex; gap: 14px; font-size: 11px; color: var(--muted); background: var(--bg-soft); }
+  .preview-foot b { color: var(--ink-2); font-weight: 700; }
+
+  /* ── Sections ── */
+  section { padding: 64px 0; }
+  .alt { background: var(--bg-alt); border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+  .stitle { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.4px; color: var(--accent); margin-bottom: 12px; }
+  .sheading { margin-bottom: 40px; max-width: 640px; }
+  .sheading.center { margin-left: auto; margin-right: auto; text-align: center; }
+  .sheading h2 { font-size: clamp(26px, 3.4vw, 36px); font-weight: 700; letter-spacing: -1px; margin: 0 0 12px; }
+  .sheading p { color: var(--muted); font-size: 16px; margin: 0; line-height: 1.6; }
+
+  /* ── Feature cards ── */
+  .cards-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+  .card { background: var(--bg); border: 1px solid var(--line); border-radius: var(--radius); padding: 24px 22px; transition: border-color .15s, box-shadow .15s, transform .15s; }
+  .card:hover { border-color: var(--line-2); box-shadow: var(--shadow); transform: translateY(-2px); }
+  .card-ic { width: 38px; height: 38px; border-radius: 10px; background: var(--accent-soft); display: grid; place-items: center; margin-bottom: 15px; }
+  .card-ic svg { width: 19px; height: 19px; stroke: var(--accent); fill: none; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+  .card h3 { font-size: 16px; font-weight: 700; margin: 0 0 7px; letter-spacing: -0.2px; }
+  .card p { font-size: 14px; color: var(--muted); margin: 0; line-height: 1.6; }
+  .card p strong { color: var(--ink-2); font-weight: 650; }
+
+  /* ── Category grid ── */
+  .cats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+  .cat-card { background: var(--bg); border: 1px solid var(--line); border-radius: var(--radius); padding: 22px 22px 18px; }
+  .cat-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; }
+  .cat-name { font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: .6px; color: var(--accent-ink); }
+  .cat-count { font-size: 11px; font-weight: 700; color: var(--muted-2); }
+  .cat-desc { font-size: 13px; color: var(--muted); margin-bottom: 16px; line-height: 1.5; }
+  .cat-dim { background: var(--bg-soft); border: 1px solid var(--line); border-radius: 10px; padding: 11px 13px; margin-top: 9px; }
+  .cat-dim:first-of-type { margin-top: 0; }
+  .cat-dim-name { font-size: 13.5px; font-weight: 650; color: var(--ink); display: flex; align-items: baseline; gap: 7px; }
+  .cat-dim-name .zh { font-size: 11px; color: var(--accent-ink); font-weight: 600; }
+  .cat-dim-desc { font-size: 12px; color: var(--muted); margin-top: 4px; line-height: 1.5; }
+
+  /* ── Steps ── */
+  .steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+  .step { background: var(--bg); border: 1px solid var(--line); border-radius: var(--radius); padding: 24px 22px; }
+  .step-num { width: 32px; height: 32px; border-radius: 999px; background: var(--ink); color: #fff; display: grid; place-items: center; font-weight: 700; font-size: 14px; margin-bottom: 14px; }
+  .step h3 { font-size: 15px; font-weight: 700; margin: 0 0 6px; }
+  .step p { font-size: 13.5px; color: var(--muted); margin: 0; line-height: 1.55; }
+  .step code { display: inline-block; margin-top: 11px; font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; font-size: 12px; color: var(--accent-ink); background: var(--accent-soft); border-radius: 6px; padding: 3px 9px; }
+
+  /* ── Fairness chips ── */
+  .chips { display: flex; gap: 10px; flex-wrap: wrap; }
+  .chip { display: inline-flex; align-items: center; gap: 9px; padding: 11px 16px; background: var(--bg); border: 1px solid var(--line); border-radius: 12px; font-size: 13.5px; color: var(--ink-2); }
+  .chip .tag { font-size: 10px; font-weight: 800; color: #fff; background: var(--accent); width: 20px; height: 20px; border-radius: 6px; display: grid; place-items: center; }
+  .chip b { font-weight: 700; }
+  .chip .sub { color: var(--muted); }
+  .note { margin-top: 22px; max-width: 720px; padding: 16px 20px; background: var(--bg); border: 1px solid var(--line); border-left: 3px solid var(--accent); border-radius: 10px; font-size: 14.5px; color: var(--ink-2); line-height: 1.6; }
+  .note b { color: var(--accent-ink); }
+
+  /* ── Privacy pills ── */
+  .pills { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; }
+  .pill { display: inline-flex; align-items: center; gap: 8px; padding: 9px 16px; background: var(--bg); border: 1px solid var(--line); border-radius: 999px; font-size: 13.5px; font-weight: 500; color: var(--ink-2); }
+  .pill .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--accent); }
+
+  /* ── Install ── */
+  .install { max-width: 640px; margin: 0 auto; }
+  .terminal { background: var(--code-bg); border-radius: var(--radius); overflow: hidden; box-shadow: 0 20px 50px rgba(13,13,13,0.18); }
+  .terminal-bar { display: flex; align-items: center; gap: 7px; padding: 12px 16px; border-bottom: 1px solid rgba(255,255,255,0.07); }
+  .terminal-bar i { width: 11px; height: 11px; border-radius: 50%; background: #3a3a40; }
+  .terminal-bar span { margin-left: 8px; font-size: 12px; color: #8e8ea0; font-family: ui-monospace, "SF Mono", Menlo, monospace; }
+  .terminal pre { margin: 0; padding: 18px 18px; font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; font-size: 13px; line-height: 1.9; color: var(--code-ink); overflow-x: auto; }
+  .terminal pre .p { color: var(--accent); user-select: none; }
+  .terminal pre .c { color: #8e8ea0; }
+  .install-hint { text-align: center; color: var(--muted); font-size: 13.5px; margin: 16px 0 0; }
+  .install-hint code { font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: 12.5px; background: var(--bg-alt); border: 1px solid var(--line); border-radius: 5px; padding: 1px 6px; color: var(--ink-2); }
+
+  /* ── CTA band ── */
+  .cta-band { text-align: center; }
+  .cta-band h2 { font-size: clamp(26px, 3.4vw, 34px); font-weight: 700; letter-spacing: -1px; margin: 0 0 10px; }
+  .cta-band p { color: var(--muted); font-size: 16px; margin: 0 0 26px; }
+
+  /* ── Footer ── */
+  footer { border-top: 1px solid var(--line); padding: 34px 0; }
+  .foot-in { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+  .foot-links { display: flex; gap: 18px; }
+  .foot-links a { font-size: 14px; color: var(--muted); }
+  .foot-links a:hover { color: var(--ink); }
+  .foot-note { font-size: 13px; color: var(--muted-2); }
+
+  @media (max-width: 880px) {
+    .hero { grid-template-columns: 1fr; gap: 40px; padding: 52px 0 48px; }
+    .cards-3, .cats-grid, .steps { grid-template-columns: 1fr; }
+    .nav-link { display: none; }
+  }
+  @media (max-width: 560px) {
+    .wrap { padding: 0 20px; }
+    .hero-cta { width: 100%; }
+    .hero-cta .btn { flex: 1; justify-content: center; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ── Nav ── -->
+<div class="nav">
+  <div class="wrap nav-in">
+    <a class="brand" href="#top">
+      <span class="brand-mark">
+        <svg viewBox="0 0 32 32" fill="none"><polygon points="16 3 28 9.5 28 22.5 16 29 4 22.5 4 9.5" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round"/><circle cx="16" cy="16" r="2.6" fill="currentColor"/></svg>
+      </span>
+      Codex Radar
+    </a>
+    <div class="nav-r">
+      <a class="nav-link" href="https://github.com/LeifDiao/codex-radar">GitHub</a>
+      <a class="nav-link" id="navM" href="https://github.com/LeifDiao/codex-radar/blob/main/docs/METHODOLOGY.md" data-en="Methodology" data-zh="方法论">Methodology</a>
+      <button class="lang-btn" id="langToggle">中文</button>
+    </div>
+  </div>
+</div>
+
+<div id="top"></div>
+
+<!-- ── Hero ── -->
+<div class="wrap">
+  <section class="hero">
+    <div>
+      <div class="eyebrow"><span class="dot"></span><span data-en="CODEX CLI PLUGIN" data-zh="CODEX CLI 插件">CODEX CLI PLUGIN</span></div>
+      <h1 data-en="Score how you<br><span class='g'>collaborate with Codex.</span>" data-zh="量化你和 Codex<br><span class='g'>的协作质量。</span>">Score how you<br><span class="g">collaborate with Codex.</span></h1>
+      <p class="hero-sub" data-en="Codex Radar reads your local Codex sessions and grades them across 9 dimensions in 3 categories — Communication, Engineering, Outcome. Your own Codex model scores the sessions and writes the diagnosis, with paste-ready improvement prompts — all in a single-file HTML dashboard." data-zh="Codex Radar 读取你本地的 Codex 会话，从「沟通力 / 工程力 / 成效」三大类 9 个维度打分。由你自己的 Codex 模型评分并撰写诊断，给出可直接粘贴的改写 prompt，输出一个单文件 HTML dashboard。">Codex Radar reads your local Codex sessions and grades them across 9 dimensions in 3 categories — Communication, Engineering, Outcome. Your own Codex model scores the sessions and writes the diagnosis, with paste-ready improvement prompts — all in a single-file HTML dashboard.</p>
+      <div class="hero-cta">
+        <a class="btn btn-lg btn-primary" href="#install" data-en="Get started" data-zh="马上开始">Get started
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+        </a>
+        <a class="btn btn-lg btn-ghost" href="https://github.com/LeifDiao/codex-radar" data-en="View on GitHub" data-zh="查看源码">View on GitHub</a>
+      </div>
+      <div class="hero-trust">
+        <span><span class="tick">✓</span><span data-en="Runs in your Codex session" data-zh="跑在你自己的 Codex 里">Runs in your Codex session</span></span>
+        <span><span class="tick">✓</span><span data-en="Evidence-grounded" data-zh="有据可查">Evidence-grounded</span></span>
+        <span><span class="tick">✓</span><span data-en="100% local" data-zh="全程本地">100% local</span></span>
+      </div>
+    </div>
+
+    <!-- Report preview -->
+    <div class="preview">
+      <div class="preview-head">
+        <div class="preview-brand">
+          <svg viewBox="0 0 32 32" fill="none"><polygon points="16 3 28 9.5 28 22.5 16 29 4 22.5 4 9.5" stroke="currentColor" stroke-width="2.4" stroke-linejoin="round"/><circle cx="16" cy="16" r="2.2" fill="currentColor"/></svg>
+          Codex Radar
+        </div>
+        <div class="preview-meta" data-en="sample report" data-zh="示例报告">sample report</div>
+      </div>
+      <div class="preview-top">
+        <div>
+          <div class="preview-profile"><span style="width:5px;height:5px;border-radius:50%;background:currentColor;"></span><span data-en="FEATURE BUILD" data-zh="功能开发">FEATURE BUILD</span></div>
+          <div class="preview-insight" data-en="Strong, steady delivery — but tests rarely back the changes you ship." data-zh="交付稳、产出强 —— 但改动很少有测试兜底。">Strong, steady delivery — but tests rarely back the changes you ship.</div>
+        </div>
+        <div class="preview-grade">
+          <div class="letter">B</div>
+          <div class="score">72 / 100</div>
+        </div>
+      </div>
+      <div class="preview-cats">
+        <div class="pcat">
+          <div class="pcat-name" data-en="Comm" data-zh="沟通">Comm</div>
+          <div class="pcat-row"><span class="pcat-num">68</span><span class="pcat-grade">B</span></div>
+          <div class="pbar"><i style="width:68%"></i></div>
+        </div>
+        <div class="pcat">
+          <div class="pcat-name" data-en="Eng" data-zh="工程">Eng</div>
+          <div class="pcat-row"><span class="pcat-num">76</span><span class="pcat-grade">A</span></div>
+          <div class="pbar"><i style="width:76%"></i></div>
+        </div>
+        <div class="pcat">
+          <div class="pcat-name" data-en="Out" data-zh="成效">Out</div>
+          <div class="pcat-row"><span class="pcat-num">73</span><span class="pcat-grade">B</span></div>
+          <div class="pbar"><i style="width:73%"></i></div>
+        </div>
+      </div>
+      <div class="preview-foot">
+        <span data-en="Strongest: <b>Efficiency</b>" data-zh="最强：<b>产出效率</b>">Strongest: <b>Efficiency</b></span>
+        <span data-en="Bottleneck: <b>Proof Check</b>" data-zh="瓶颈：<b>验证意识</b>">Bottleneck: <b>Proof Check</b></span>
+      </div>
+    </div>
+  </section>
+</div>
+
+<!-- ── Features ── -->
+<section id="features" class="alt">
+  <div class="wrap">
+    <div class="sheading">
+      <div class="stitle" data-en="Why Codex Radar" data-zh="为什么是 Codex Radar">Why Codex Radar</div>
+      <h2 data-en="Grounded in your real work — not a quiz" data-zh="基于你真实的工作，而不是答题">Grounded in your real work — not a quiz</h2>
+      <p data-en="It reads the sessions you already had with Codex, then turns them into a fair, evidence-grounded score and a concrete plan." data-zh="它读取你已经和 Codex 进行过的会话，把它们变成一份公平、有据可查的评分和一套具体的改进方案。">It reads the sessions you already had with Codex, then turns them into a fair, evidence-grounded score and a concrete plan.</p>
+    </div>
+    <div class="cards-3">
+      <div class="card">
+        <div class="card-ic"><svg viewBox="0 0 24 24"><polygon points="12 2 22 8.5 22 15.5 12 22 2 15.5 2 8.5"/><circle cx="12" cy="12" r="2.4" fill="currentColor" stroke="none"/></svg></div>
+        <h3 data-en="Reads your real sessions" data-zh="评估真实会话">Reads your real sessions</h3>
+        <p data-en="Parses the actual JSONL Codex writes — every <strong>prompt</strong>, <strong>shell command and exit code</strong>, <strong>apply_patch</strong> edit, plan update, and MCP / search / subagent call." data-zh="直接解析 Codex 写下的真实 JSONL —— 每条 <strong>prompt</strong>、<strong>shell 命令与退出码</strong>、<strong>apply_patch</strong> 编辑、plan 更新，以及 MCP / 搜索 / 子代理调用。">Parses the actual JSONL Codex writes — every <strong>prompt</strong>, <strong>shell command and exit code</strong>, <strong>apply_patch</strong> edit, plan update, and MCP / search / subagent call.</p>
+      </div>
+      <div class="card">
+        <div class="card-ic"><svg viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h10"/><circle cx="18" cy="17" r="2.2" fill="currentColor" stroke="none"/></svg></div>
+        <h3 data-en="Your Codex writes the diagnosis" data-zh="你的 Codex 亲自写诊断">Your Codex writes the diagnosis</h3>
+        <p data-en="A deterministic parser extracts the facts; then your own Codex model scores them against a <strong>transparent rubric</strong> — a formula baseline plus a bounded, <strong>evidence-cited</strong> adjustment — and writes a free-form coaching note." data-zh="确定性解析器先提取事实；再由你自己的 Codex 模型对照<strong>公开 rubric</strong> 打分 —— 公式基线 + 有界、<strong>引用证据</strong>的微调 —— 并写出一段自由格式的诊断。">A deterministic parser extracts the facts; then your own Codex model scores them against a <strong>transparent rubric</strong> — a formula baseline plus a bounded, <strong>evidence-cited</strong> adjustment — and writes a free-form coaching note.</p>
+      </div>
+      <div class="card">
+        <div class="card-ic"><svg viewBox="0 0 24 24"><rect x="5" y="4" width="14" height="17" rx="2"/><path d="M9 4V3h6v1"/><path d="M8.5 11l2 2 4-4"/></svg></div>
+        <h3 data-en="Paste-ready prompt rewrites" data-zh="可粘贴的 prompt 改写">Paste-ready prompt rewrites</h3>
+        <p data-en="Every weak signal becomes a concrete prompt you can paste into your next thread — tagged with the dimension it lifts and its <strong>expected impact</strong>." data-zh="每个薄弱信号都变成一段可粘贴到下个 thread 的具体 prompt，并标注它提升的维度和<strong>预期影响</strong>。">Every weak signal becomes a concrete prompt you can paste into your next thread — tagged with the dimension it lifts and its <strong>expected impact</strong>.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── 9 dimensions × 3 categories ── -->
+<section>
+  <div class="wrap">
+    <div class="sheading center">
+      <div class="stitle" data-en="9 Dimensions × 3 Categories" data-zh="九维 · 三类">9 Dimensions × 3 Categories</div>
+      <h2 data-en="Measured, not guessed" data-zh="每一分都有据可查">Measured, not guessed</h2>
+      <p data-en="Every score traces back to a formula and a countable signal from your session. No black box." data-zh="每个分数都能追溯到一个公式和你会话里的一个可计数信号。没有黑盒。">Every score traces back to a formula and a countable signal from your session. No black box.</p>
+    </div>
+    <div class="cats-grid">
+      <div class="cat-card">
+        <div class="cat-head">
+          <div class="cat-name" data-en="Communication" data-zh="沟通力">Communication</div>
+          <div class="cat-count">3 DIMS</div>
+        </div>
+        <div class="cat-desc" data-en="How clearly you direct Codex through text." data-zh="你用文字驱动 Codex 有多清晰。">How clearly you direct Codex through text.</div>
+        <div class="cat-dim"><div class="cat-dim-name">Lock-On <span class="zh">瞄准力</span></div><div class="cat-dim-desc" data-en="Goal, expected behavior, file paths, constraints in your directives." data-zh="指令里的目标、期望行为、文件路径、约束。">Goal, expected behavior, file paths, constraints in your directives.</div></div>
+        <div class="cat-dim"><div class="cat-dim-name">Scene Setting <span class="zh">铺场力</span></div><div class="cat-dim-desc" data-en="How much useful context your opening messages carry." data-zh="开场消息携带了多少有用的上下文。">How much useful context your opening messages carry.</div></div>
+        <div class="cat-dim"><div class="cat-dim-name">Steering <span class="zh">校准力</span></div><div class="cat-dim-desc" data-en="Quality of mid-session course-correction and verification asks." data-zh="过程中纠偏与要求验证的质量。">Quality of mid-session course-correction and verification asks.</div></div>
+      </div>
+      <div class="cat-card">
+        <div class="cat-head">
+          <div class="cat-name" data-en="Engineering" data-zh="工程力">Engineering</div>
+          <div class="cat-count">3 DIMS</div>
+        </div>
+        <div class="cat-desc" data-en="How well you drive the Codex platform." data-zh="你把 Codex 平台用到几成。">How well you drive the Codex platform.</div>
+        <div class="cat-dim"><div class="cat-dim-name">Toolcraft <span class="zh">工具调度</span></div><div class="cat-dim-desc" data-en="Shell, patch, plan, MCP, search, subagents + command success rate." data-zh="shell、补丁、plan、MCP、搜索、子代理 + 命令成功率。">Shell, patch, plan, MCP, search, subagents + command success rate.</div></div>
+        <div class="cat-dim"><div class="cat-dim-name">Architecture <span class="zh">工程脚手架</span></div><div class="cat-dim-desc" data-en="Durable setup — AGENTS.md, repo scaffolding, tests, manifests." data-zh="持久化设置 —— AGENTS.md、仓库脚手架、测试、依赖清单。">Durable setup — AGENTS.md, repo scaffolding, tests, manifests.</div></div>
+        <div class="cat-dim"><div class="cat-dim-name">Tempo <span class="zh">推进节奏</span></div><div class="cat-dim-desc" data-en="Steady progress without aborts, compactions, or tool churn." data-zh="稳步推进，不频繁中断、压缩或工具空转。">Steady progress without aborts, compactions, or tool churn.</div></div>
+      </div>
+      <div class="cat-card">
+        <div class="cat-head">
+          <div class="cat-name" data-en="Outcome" data-zh="成效">Outcome</div>
+          <div class="cat-count">3 DIMS</div>
+        </div>
+        <div class="cat-desc" data-en="What actually gets done." data-zh="最终实际产出了什么。">What actually gets done.</div>
+        <div class="cat-dim"><div class="cat-dim-name">Efficiency <span class="zh">产出效率</span></div><div class="cat-dim-desc" data-en="Useful output per human message and per tool call." data-zh="每条消息、每次工具调用的有效产出。">Useful output per human message and per tool call.</div></div>
+        <div class="cat-dim"><div class="cat-dim-name">Proof Check <span class="zh">验证意识</span></div><div class="cat-dim-desc" data-en="Tests, builds, lint, screenshots, renders, explicit checks." data-zh="测试、构建、lint、截图、渲染、显式验证。">Tests, builds, lint, screenshots, renders, explicit checks.</div></div>
+        <div class="cat-dim"><div class="cat-dim-name">Completion <span class="zh">闭环完成</span></div><div class="cat-dim-desc" data-en="Turns finish cleanly instead of trailing off mid-task." data-zh="回合干净收尾，而不是半途而废。">Turns finish cleanly instead of trailing off mid-task.</div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── How it works ── -->
+<section id="how" class="alt">
+  <div class="wrap">
+    <div class="sheading center">
+      <div class="stitle" data-en="How it works" data-zh="工作原理">How it works</div>
+      <h2 data-en="Facts in, judgment out" data-zh="先取事实，再下判断">Facts in, judgment out</h2>
+      <p data-en="Three stages, all on your machine: a deterministic parser extracts the facts, your Codex model applies the rubric, and a renderer builds the dashboard." data-zh="三个阶段，全部在你本机完成：确定性解析器提取事实，你的 Codex 模型套用 rubric，再渲染成 dashboard。">Three stages, all on your machine: a deterministic parser extracts the facts, your Codex model applies the rubric, and a renderer builds the dashboard.</p>
+    </div>
+    <div class="steps">
+      <div class="step">
+        <div class="step-num">1</div>
+        <h3 data-en="Detect &amp; parse" data-zh="检测与解析">Detect &amp; parse</h3>
+        <p data-en="Scans your local sessions, matches the current project, and extracts countable signals." data-zh="扫描你本地的会话，匹配当前项目，提取可计数的信号。">Scans your local sessions, matches the current project, and extracts countable signals.</p>
+        <code>~/.codex/sessions</code>
+      </div>
+      <div class="step">
+        <div class="step-num">2</div>
+        <h3 data-en="Score &amp; diagnose" data-zh="评分与诊断">Score &amp; diagnose</h3>
+        <p data-en="Your Codex applies the rubric's formula baseline, adds a bounded evidence-based adjustment, and writes the diagnosis." data-zh="你的 Codex 套用 rubric 的公式基线，加上有界的、基于证据的微调，并撰写诊断。">Your Codex applies the rubric's formula baseline, adds a bounded evidence-based adjustment, and writes the diagnosis.</p>
+        <code>rubric.json</code>
+      </div>
+      <div class="step">
+        <div class="step-num">3</div>
+        <h3 data-en="Render" data-zh="渲染">Render</h3>
+        <p data-en="Writes a self-contained HTML dashboard you can open, scan, and share." data-zh="输出一个自包含的 HTML dashboard，可打开、可浏览、可分享。">Writes a self-contained HTML dashboard you can open, scan, and share.</p>
+        <code>~/.codex-radar/reports</code>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── Fairness ── -->
+<section>
+  <div class="wrap">
+    <div class="sheading">
+      <div class="stitle" data-en="Fairness" data-zh="公平性">Fairness</div>
+      <h2 data-en="A 3-message fix isn't a 50-session build" data-zh="3 条消息的修复 ≠ 50 个会话的大项目">A 3-message fix isn't a 50-session build</h2>
+      <p data-en="Every project is auto-classified into one of four profiles, each with its own category weights." data-zh="每个项目自动归入四种画像之一，各有自己的类别权重。">Every project is auto-classified into one of four profiles, each with its own category weights.</p>
+    </div>
+    <div class="chips">
+      <div class="chip"><span class="tag">A</span><span><b data-en="One-shot" data-zh="一次性">One-shot</b> <span class="sub" data-en="· few messages, light editing" data-zh="· 消息少、改动少">· few messages, light editing</span></span></div>
+      <div class="chip"><span class="tag">B</span><span><b data-en="Feature build" data-zh="功能开发">Feature build</b> <span class="sub" data-en="· real implementation work" data-zh="· 实打实的实现工作">· real implementation work</span></span></div>
+      <div class="chip"><span class="tag">C</span><span><b data-en="Long-running" data-zh="长期项目">Long-running</b> <span class="sub" data-en="· many sessions or compactions" data-zh="· 多会话或多次压缩">· many sessions or compactions</span></span></div>
+      <div class="chip"><span class="tag">D</span><span><b data-en="Learning" data-zh="学习探索">Learning</b> <span class="sub" data-en="· conversation-heavy, few edits" data-zh="· 以对话为主、改动少">· conversation-heavy, few edits</span></span></div>
+    </div>
+    <div class="note" data-en="<b>Honest N/A, not a faked 50.</b> When a signal genuinely can't be evaluated — like Architecture when the project directory no longer exists on this machine — the dimension is marked N/A and dropped from the average." data-zh="<b>诚实的 N/A，而不是假装给 50 分。</b>当某个信号确实无法评估时 —— 比如项目目录在本机已经不存在，Architecture 维度会标记为 N/A，并从均值里剔除。"><b>Honest N/A, not a faked 50.</b> When a signal genuinely can't be evaluated — like Architecture when the project directory no longer exists on this machine — the dimension is marked N/A and dropped from the average.</div>
+  </div>
+</section>
+
+<!-- ── Privacy ── -->
+<section class="alt">
+  <div class="wrap">
+    <div class="sheading center">
+      <div class="stitle" data-en="Privacy" data-zh="隐私">Privacy</div>
+      <h2 data-en="100% on your machine" data-zh="数据只在你电脑上">100% on your machine</h2>
+      <p data-en="Your session data never leaves your computer. No network calls, ever." data-zh="你的会话数据不离开本机。不发任何网络请求。">Your session data never leaves your computer. No network calls, ever.</p>
+    </div>
+    <div class="pills">
+      <div class="pill"><span class="dot"></span><span data-en="No cloud" data-zh="不上云">No cloud</span></div>
+      <div class="pill"><span class="dot"></span><span data-en="No separate API key" data-zh="无需额外密钥">No separate API key</span></div>
+      <div class="pill"><span class="dot"></span><span data-en="Runs in your Codex" data-zh="跑在你的 Codex 里">Runs in your Codex</span></div>
+      <div class="pill"><span class="dot"></span><span data-en="No telemetry" data-zh="不采集">No telemetry</span></div>
+      <div class="pill"><span class="dot"></span><span data-en="Read-only sessions" data-zh="只读会话">Read-only sessions</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- ── Install ── -->
+<section id="install">
+  <div class="wrap">
+    <div class="sheading center">
+      <div class="stitle" data-en="Get started" data-zh="马上开始">Get started</div>
+      <h2 data-en="Two commands, then ask" data-zh="两条命令，然后开口问">Two commands, then ask</h2>
+      <p data-en="Requires the Codex CLI and Node.js 18+. No build step, no server." data-zh="需要 Codex CLI 和 Node.js 18+。无需编译，无需服务。">Requires the Codex CLI and Node.js 18+. No build step, no server.</p>
+    </div>
+    <div class="install">
+      <div class="terminal">
+        <div class="terminal-bar"><i></i><i></i><i></i><span>codex</span></div>
+        <pre><span class="p">$</span> codex plugin marketplace add LeifDiao/codex-radar
+<span class="p">$</span> codex plugin add codex-radar@codex-radar-marketplace
+
+<span class="c"># start a new thread, then ask:</span>
+<span class="p">›</span> Run Codex Radar on this project</pre>
+      </div>
+      <p class="install-hint" data-en="Or develop locally: <code>git clone</code> the repo, then <code>codex plugin marketplace add .</code>" data-zh="或本地开发：<code>git clone</code> 仓库，然后 <code>codex plugin marketplace add .</code>">Or develop locally: <code>git clone</code> the repo, then <code>codex plugin marketplace add .</code></p>
+    </div>
+  </div>
+</section>
+
+<!-- ── CTA band ── -->
+<section class="alt">
+  <div class="wrap cta-band">
+    <h2 data-en="See how you really work with Codex" data-zh="看看你和 Codex 真实的协作方式">See how you really work with Codex</h2>
+    <p data-en="A few seconds of pure local analysis. No tokens, no cloud, no waiting on a model." data-zh="几秒钟的纯本地分析。不耗 token、不上云、不用等模型。">A few seconds of pure local analysis. No tokens, no cloud, no waiting on a model.</p>
+    <a class="btn btn-lg btn-primary" href="https://github.com/LeifDiao/codex-radar" data-en="Get Codex Radar" data-zh="获取 Codex Radar">Get Codex Radar
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+    </a>
+  </div>
+</section>
+
+<!-- ── Footer ── -->
+<footer>
+  <div class="wrap foot-in">
+    <div class="brand">
+      <span class="brand-mark"><svg viewBox="0 0 32 32" fill="none"><polygon points="16 3 28 9.5 28 22.5 16 29 4 22.5 4 9.5" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round"/><circle cx="16" cy="16" r="2.6" fill="currentColor"/></svg></span>
+      Codex Radar
+    </div>
+    <div class="foot-links">
+      <a href="https://github.com/LeifDiao/codex-radar">GitHub</a>
+      <a id="footM" href="https://github.com/LeifDiao/codex-radar/blob/main/docs/METHODOLOGY.md" data-en="Methodology" data-zh="方法论">Methodology</a>
+      <a href="https://github.com/LeifDiao/codex-radar/blob/main/CHANGELOG.md" data-en="Changelog" data-zh="更新日志">Changelog</a>
+    </div>
+    <div class="foot-note">CC-BY-NC-4.0 · <span data-en="Built by" data-zh="作者">Built by</span> <a href="https://github.com/LeifDiao" style="color:var(--accent-ink)">Leif Diao</a></div>
+  </div>
+</footer>
+
+<script>
+(function () {
+  var isZh = /^zh/i.test(navigator.language || "");
+  var lang = isZh ? "zh" : "en";
+  var base = "https://github.com/LeifDiao/codex-radar/blob/main/docs/";
+
+  function apply() {
+    document.querySelectorAll("[data-en]").forEach(function (el) {
+      var v = el.dataset[lang] || el.dataset.en;
+      if (v != null) el.innerHTML = v;
+    });
+    var f = lang === "zh" ? "METHODOLOGY_zh.md" : "METHODOLOGY.md";
+    ["navM", "footM"].forEach(function (id) {
+      var el = document.getElementById(id);
+      if (el) el.href = base + f;
+    });
+    document.getElementById("langToggle").textContent = lang === "zh" ? "EN" : "中文";
+    document.documentElement.lang = lang;
+  }
+
+  document.getElementById("langToggle").addEventListener("click", function () {
+    lang = lang === "zh" ? "en" : "zh";
+    apply();
+  });
+  apply();
+})();
+</script>
+</body>
+</html>

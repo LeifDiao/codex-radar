@@ -1,0 +1,191 @@
+# Codex Radar
+
+> **A Codex plugin that reads your local Codex session history and grades how well you collaborate with the agent.** 9 dimensions across 3 categories — Communication, Engineering, Outcome. Your own Codex model scores the sessions against a transparent rubric and writes a free-form diagnosis, plus paste-ready improvement prompts — all in a professional, readable single-file HTML dashboard. 100% local.
+
+🌏 [中文版](./README_zh.md) · 📖 [Methodology](./docs/METHODOLOGY.md) · 🖥 [Live preview](https://leifdiao.github.io/codex-radar/) · ⚖️ [License](./LICENSE)
+
+> **中文简介：** 一款 Codex 插件，读取你本地的 Codex 会话记录，从「沟通力 / 工程力 / 成效」三个层面、9 个维度评估你和 Codex 的协作质量。由你自己的 Codex 模型对照公开 rubric 打分并撰写诊断，输出一组可直接粘贴的改写 prompt 和一个专业可读的单文件 HTML dashboard。全程本地。完整中文文档 → [README_zh.md](./README_zh.md)
+
+---
+
+## Key features
+
+**🎯 Reads your actual Codex sessions, not synthetic prompts.** Codex Radar parses the real JSONL your agent already writes — every prompt you sent, every shell command and its exit code, every `apply_patch` edit, every plan update, MCP / web-search / image / subagent call. The score reflects how you actually worked, not how you answer a quiz.
+
+**💬 Your Codex writes you a coaching note, not just a scoreboard.** A deterministic parser extracts the facts; then your own Codex model scores them against a transparent rubric — a formula baseline plus a bounded, evidence-cited ±15 adjustment — and writes a free-form collaboration diagnosis. Every claim points back to your real messages.
+
+**📋 Every suggestion is a paste-ready prompt.** No "be more thoughtful" advice. Each improvement comes with a concrete prompt you can copy straight into your next thread, plus the dimension it lifts and the expected impact.
+
+**⚖️ Project-type-aware weighting.** A 3-message fix isn't judged on the same scale as a 50-session feature build. Codex Radar auto-classifies each project (`one-shot` / `feature-build` / `long-running` / `learning`) and applies different category weights. When a signal genuinely can't be evaluated — e.g. Architecture when the project directory no longer exists on this machine — the dimension is marked **N/A** instead of faked.
+
+**🛠 Scores how you drive the platform, not just how you talk.** The Engineering category reads shell-command success rate, patching, plan updates, MCP servers, web search, image tools, and subagent spawns. Architecture rewards durable setup — `AGENTS.md`, repo scaffolding, tests, manifests — the leverage most users underuse.
+
+**🔒 100% local, zero telemetry.** Read-only access to `~/.codex/sessions`. No API key, no cloud, no network calls. Reports are escaped single-file HTML written to `~/.codex-radar/reports/`.
+
+> **中文要点：**
+> - **🎯 评估你真实的 Codex 会话记录**，直接解析 prompt、shell 命令与退出码、`apply_patch` 编辑、plan 更新、MCP / 搜索 / 图像 / 子代理调用
+> - **💬 你的 Codex 亲自写诊断**：解析器提取事实，模型对照公开 rubric 打分（公式基线 + 引用证据的 ±15 微调）并撰写自由格式诊断，每条结论都指向你的真实消息
+> - **📋 每条建议都是可粘贴 prompt**，附带它能提升的维度和预期影响
+> - **⚖️ 按项目类型公平加权**：一次性任务 / 功能开发 / 长期项目 / 学习探索 各用不同权重；信号无法评估时维度标记 N/A，绝不假装给 50 分
+> - **🛠 专门评估你怎么用平台**：shell 成功率、补丁、plan、MCP、搜索、图像、子代理；Architecture 奖励 AGENTS.md 与仓库脚手架
+> - **🔒 100% 本地、零上传**：只读访问 `~/.codex/sessions`，无 API key，无网络请求
+>
+> 完整中文版 → [README_zh.md](./README_zh.md)
+
+---
+
+## What the report includes
+
+Ask Codex to run the plugin and you get a single-file, professional, readable HTML dashboard:
+
+**Overall grade** — S through D, paired with your project profile so you know what scale you're being judged on.
+
+**Three category scorecards** — each scoring 0-100 with its 3 dimensions:
+
+| Category | Dimensions |
+| --- | --- |
+| **Communication** | Lock-On 瞄准力 · Scene Setting 铺场力 · Steering 校准力 |
+| **Engineering** | Toolcraft 工具调度 · Architecture 工程脚手架 · Tempo 推进节奏 |
+| **Outcome** | Efficiency 产出效率 · Proof Check 验证意识 · Completion 闭环完成 |
+
+**Diagnosis** — your strongest signal, your main bottleneck, a collaboration summary, and a cross-category pattern read — all computed from your own session, with per-dimension evidence shown inline.
+
+**Improvement prompts** — a prioritized set of paste-ready prompt rewrites (up to 7), one for each dimension with clear room to improve, each tagged with its expected score impact.
+
+**Signals & metrics** — top tools, tool categories, project assets (`AGENTS.md`, `.git`, tests, manifests), command success rate, context compactions, and a key-messages table with the signals detected in each.
+
+---
+
+## Install
+
+**Step 1** — Add the marketplace (this repo is itself a Codex marketplace):
+
+```bash
+codex plugin marketplace add LeifDiao/codex-radar
+```
+
+**Step 2** — Install the plugin:
+
+```bash
+codex plugin add codex-radar@codex-radar-marketplace
+```
+
+**Alternative (local checkout):**
+
+```bash
+git clone https://github.com/LeifDiao/codex-radar.git ~/codex-radar
+codex plugin marketplace add ~/codex-radar
+codex plugin add codex-radar@codex-radar-marketplace
+```
+
+Start a **new thread** after installing so Codex picks up the new skill.
+
+---
+
+## Use
+
+Codex Radar runs through natural language — there's no slash command to memorize. In a new thread, ask:
+
+```text
+Run Codex Radar on this project
+```
+
+1. Codex Radar detects your current working directory in local session history and asks whether to analyze it.
+2. Confirm, or pick from the recent-projects list.
+3. It parses and scores the sessions — a few seconds, pure Node, no waiting on a model.
+4. The dashboard is written to `~/.codex-radar/reports/` and the path is printed for you to open.
+
+Starter prompts like *"Analyze my Codex collaboration"* or *"Create a Codex Radar report"* work too.
+
+---
+
+## Requirements
+
+- **Codex CLI** with plugin support
+- **Node.js 18+**
+- No `npm install`, no build step, no server
+
+---
+
+## Privacy
+
+Your session data stays on your machine:
+
+- Everything runs locally — no network calls, no API key, no telemetry
+- `~/.codex/sessions`, `~/.codex/archived_sessions`, and `~/.codex/session_index.jsonl` are read-only
+- Reports write to `~/.codex-radar/reports/` (temp JSON to `~/.codex-radar/temp/`)
+- Project-asset detection only checks whether files like `AGENTS.md`, `.git`, or a tests folder exist — it never reads their contents
+- Reports may include short snippets of your own prompts as evidence — treat the HTML as private unless you intentionally share it
+
+See [PRIVACY.md](./PRIVACY.md) for the full data map.
+
+---
+
+## How scoring works
+
+**Two layers, mirroring [Claude Radar](https://github.com/LeifDiao/claude-radar):**
+
+1. **Facts** — `parse-codex-project.mjs` reads the matching session files and extracts countable signals (message patterns, tool categories, command exit codes, patch events, proof commands, project assets). Deterministic: same input → same facts.
+2. **Scoring + diagnosis** — your own Codex model reads those facts and `data/rubric.json`, computes each dimension's formula baseline, applies a bounded ±15 evidence-based adjustment, then writes a free-form diagnosis and paste-ready prompts. The rubric is the public scoring constitution.
+3. **Render** — `render-report.mjs` turns the report JSON into a single self-contained HTML file.
+
+The analysis runs inside your own Codex session — the plugin makes no network calls of its own and needs no separate API key.
+
+👉 [Read the full Methodology](./docs/METHODOLOGY.md)
+
+---
+
+## Transparent rubric
+
+All scoring inputs live in [`plugins/codex-radar/data/rubric.json`](./plugins/codex-radar/data/rubric.json):
+
+- 9 dimension definitions (English + 中文) and their categories
+- 4 project profiles with per-profile category weight tables
+- Grade thresholds (S / A / B / C / D)
+
+Want scoring to match your team's standards? Edit this file and the dimension formulas in `parse-codex-project.mjs` — the parser re-reads the rubric on every run.
+
+---
+
+## Repository layout
+
+This repo is itself a Codex plugin marketplace.
+
+```text
+codex-radar/
+├── .agents/plugins/marketplace.json      # Codex marketplace manifest
+├── docs/
+│   ├── index.html                        # GitHub Pages landing page
+│   ├── METHODOLOGY.md / METHODOLOGY_zh.md # scoring spec (EN + 中文)
+└── plugins/
+    └── codex-radar/
+        ├── .codex-plugin/plugin.json      # plugin manifest
+        ├── data/rubric.json               # 9-dim definitions + profile weights
+        └── skills/analyze/
+            ├── SKILL.md                    # orchestration: detect → parse → render
+            └── scripts/
+                ├── lib.mjs                 # shared Codex session helpers
+                ├── list-codex-projects.mjs # scan ~/.codex/sessions + cwd match
+                ├── parse-codex-project.mjs # signal extraction → facts JSON (no scoring)
+                └── render-report.mjs       # report JSON → single-file HTML
+```
+
+Zero runtime dependencies.
+
+---
+
+## License
+
+Codex Radar is released under **CC BY-NC 4.0**:
+
+- ✅ **Free** for personal, educational, research, and any non-commercial use
+- ✅ **Forking, modifying, sharing** is welcomed — please attribute the original repo and indicate any changes
+- ❌ **Commercial use** (bundling into paid products, internal use beyond individual scope in for-profit companies, paid SaaS hosting, selling reports/analyses based on the scoring) requires a separate license
+
+**For commercial licensing**, contact: **leifdiao@gmail.com**
+
+See [LICENSE](./LICENSE) for the full terms.
+
+---
+
+*Built for people who care about the quality of AI collaboration.*

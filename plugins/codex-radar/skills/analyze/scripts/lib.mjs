@@ -1,0 +1,218 @@
+import fs from "node:fs";
+import os from "node:os";
+import path from "node:path";
+import readline from "node:readline";
+
+export const CODEX_HOME = process.env.CODEX_HOME || path.join(os.homedir(), ".codex");
+export const RADAR_HOME = process.env.CODEX_RADAR_HOME || path.join(os.homedir(), ".codex-radar");
+export const SESSION_ROOTS = [
+  path.join(CODEX_HOME, "sessions"),
+  path.join(CODEX_HOME, "archived_sessions")
+];
+
+export function ensureDir(dir) {
+  fs.mkdirSync(dir, { recursive: true });
+}
+
+export function fileExists(filePath) {
+  try {
+    return fs.existsSync(filePath);
+  } catch {
+    return false;
+  }
+}
+
+export function statSafe(filePath) {
+  try {
+    return fs.statSync(filePath);
+  } catch {
+    return null;
+  }
+}
+
+export async function walkJsonl(root) {
+  const out = [];
+  if (!fileExists(root)) return out;
+  const entries = await fs.promises.readdir(root, { withFileTypes: true });
+  for (const entry of entries) {
+    const fullPath = path.join(root, entry.name);
+    if (entry.isDirectory()) {
+      out.push(...await walkJsonl(fullPath));
+    } else if (entry.isFile() && entry.name.endsWith(".jsonl")) {
+      out.push(fullPath);
+    }
+  }
+  return out;
+}
+
+export async function allSessionFiles() {
+  const groups = await Promise.all(SESSION_ROOTS.map((root) => walkJsonl(root)));
+  return [...new Set(groups.flat())].sort();
+}
+
+export async function eachJsonLine(filePath, onRecord) {
+  const stream = fs.createReadStream(filePath, { encoding: "utf8" });
+  const rl = readline.createInterface({
+    input: stream,
+    crlfDelay: Infinity
+  });
+
+  let index = 0;
+  for await (const line of rl) {
+    if (!line) continue;
+    const record = parseJsonLine(line);
+    if (record) await onRecord(record, index);
+    index += 1;
+  }
+}
+
+export function parseJsonLine(line) {
+  if (line.length > 2_000_000) {
+    const topType = line.match(/"type":"([^"]+)"/)?.[1] || "unknown";
+    const payloadType = line.match(/"payload":\{"type":"([^"]+)"/)?.[1];
+    const timestamp = line.match(/"timestamp":"([^"]+)"/)?.[1];
+    const callId = line.match(/"call_id":"([^"]+)"/)?.[1] || line.match(/"id":"([^"]+)"/)?.[1];
+    return {
+      timestamp,
+      type: topType,
+      payload: {
+        type: payloadType,
+        call_id: callId,
+        oversized: true
+      }
+    };
+  }
+  try {
+    return JSON.parse(line);
+  } catch {
+    return null;
+  }
+}
+
+export async function readSessionMeta(filePath) {
+  let meta = null;
+  await eachJsonLine(filePath, (record) => {
+    if (record.type === "session_meta") {
+      meta = record.payload || {};
+      throw new StopReading();
+    }
+  }).catch((error) => {
+    if (!(error instanceof StopReading)) throw error;
+  });
+  return meta;
+}
+
+class StopReading extends Error {}
+
+export function loadThreadIndex() {
+  const indexPath = path.join(CODEX_HOME, "session_index.jsonl");
+  const index = new Map();
+  if (!fileExists(indexPath)) return index;
+  const lines = fs.readFileSync(indexPath, "utf8").split(/\n/).filter(Boolean);
+  for (const line of lines) {
+    try {
+      const record = JSON.parse(line);
+      if (record.id) index.set(record.id, record);
+    } catch {
+      // Ignore corrupt index lines.
+    }
+  }
+  return index;
+}
+
+export function normalizePath(inputPath) {
+  if (!inputPath) return "";
+  return path.resolve(inputPath.replace(/^~(?=$|\/)/, os.homedir()));
+}
+
+export function isSameOrChild(parent, child) {
+  const resolvedParent = normalizePath(parent);
+  const resolvedChild = normalizePath(child);
+  if (!resolvedParent || !resolvedChild) return false;
+  if (resolvedParent === resolvedChild) return true;
+  const rel = path.relative(resolvedParent, resolvedChild);
+  return Boolean(rel) && !rel.startsWith("..") && !path.isAbsolute(rel);
+}
+
+export function displayNameFromCwd(cwd) {
+  if (!cwd) return "Unknown";
+  const name = path.basename(cwd);
+  return name || cwd;
+}
+
+export function clip(text, max = 160) {
+  const normalized = String(text || "").replace(/\s+/g, " ").trim();
+  if (normalized.length <= max) return normalized;
+  return `${normalized.slice(0, max - 1)}…`;
+}
+
+export function extractTextContent(content) {
+  if (typeof content === "string") return content;
+  if (!Array.isArray(content)) return "";
+  const parts = [];
+  for (const item of content) {
+    if (!item || typeof item !== "object") continue;
+    if (typeof item.text === "string") parts.push(item.text);
+    else if (typeof item.output_text === "string") parts.push(item.output_text);
+  }
+  return parts.join("\n");
+}
+
+export function clamp(value, min = 0, max = 100) {
+  return Math.max(min, Math.min(max, value));
+}
+
+export function ratio(numerator, denominator) {
+  if (!denominator) return 0;
+  return numerator / denominator;
+}
+
+export function round(value) {
+  return Math.round(clamp(Number.isFinite(value) ? value : 0));
+}
+
+export function gradeFor(score, thresholds) {
+  if (score === null || score === undefined) return null;
+  for (const grade of ["S", "A", "B", "C", "D"]) {
+    if (score >= thresholds[grade]) return grade;
+  }
+  return "D";
+}
+
+export function loadRubric(skillDir) {
+  const rubricPath = path.resolve(skillDir, "../../data/rubric.json");
+  return JSON.parse(fs.readFileSync(rubricPath, "utf8"));
+}
+
+export function escapeHtml(value) {
+  return String(value ?? "")
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;");
+}
+
+export function slugify(value) {
+  return String(value || "project")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 72) || "project";
+}
+
+export function countBy(items, getKey) {
+  const counts = {};
+  for (const item of items) {
+    const key = getKey(item);
+    if (!key) continue;
+    counts[key] = (counts[key] || 0) + 1;
+  }
+  return counts;
+}
+
+export function topCounts(counts, limit = 12) {
+  return Object.entries(counts)
+    .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
+    .slice(0, limit)
+    .map(([name, count]) => ({ name, count }));
+}

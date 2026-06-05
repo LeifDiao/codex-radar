@@ -1,0 +1,20 @@
+{
+  "name": "codex-radar-marketplace",
+  "interface": {
+    "displayName": "Codex Radar"
+  },
+  "plugins": [
+    {
+      "name": "codex-radar",
+      "source": {
+        "source": "local",
+        "path": "./plugins/codex-radar"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Productivity"
+    }
+  ]
+}

@@ -1,0 +1,39 @@
+{
+  "name": "codex-radar",
+  "version": "1.0.0",
+  "description": "Analyze your local Codex collaboration history across 9 dimensions in 3 categories (Communication / Engineering / Outcome): your Codex model scores the sessions and writes a diagnosis with paste-ready prompt rewrites, rendered as a single-file HTML dashboard. 100% local.",
+  "author": {
+    "name": "Leif Diao",
+    "email": "leifdiao@gmail.com",
+    "url": "https://github.com/LeifDiao"
+  },
+  "homepage": "https://leifdiao.github.io/codex-radar/",
+  "repository": "https://github.com/LeifDiao/codex-radar",
+  "license": "CC-BY-NC-4.0",
+  "skills": "./skills/",
+  "keywords": [
+    "codex",
+    "analysis",
+    "collaboration",
+    "productivity",
+    "diagnostics"
+  ],
+  "interface": {
+    "displayName": "Codex Radar",
+    "shortDescription": "Score your Codex collaboration, locally.",
+    "longDescription": "Codex Radar reads your local Codex session JSONL files. A deterministic parser extracts the facts, then your own Codex model scores collaboration across 9 dimensions in 3 categories against a transparent rubric, writes a free-form diagnosis, and renders a single-file HTML dashboard with evidence and paste-ready improvement prompts. The plugin makes no network calls of its own and needs no separate API key — the analysis runs inside your Codex session.",
+    "developerName": "Leif Diao",
+    "category": "Productivity",
+    "capabilities": [
+      "Read",
+      "Write"
+    ],
+    "defaultPrompt": [
+      "Run Codex Radar on this project",
+      "Analyze my Codex collaboration",
+      "Create a Codex Radar report"
+    ],
+    "brandColor": "#2563EB",
+    "websiteURL": "https://leifdiao.github.io/codex-radar/"
+  }
+}
