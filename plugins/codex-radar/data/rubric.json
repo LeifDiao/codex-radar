@@ -1,5 +1,5 @@
 {
-  "schemaVersion": "2.0",
+  "schemaVersion": "2.1",
 
   "categories": {
     "communication": {
@@ -52,19 +52,33 @@
         "signalsByPosition.directing.ratios.errorLog",
         "stats.averageHumanMessageLength"
       ],
-      "baselineFormula": "35 + directing.explicitGoal * 20 + directing.expectedBehavior * 18 + directing.filePath * 18 + directing.constraints * 10 + directing.errorLog * 8 - max(0, 90 - stats.averageHumanMessageLength) * 0.08, clamped [0, 100]",
+      "baselineFormula": "35 + directing.explicitGoal * 20 + directing.expectedBehavior * 18 + directing.filePath * 18 + directing.constraints * 10 + directing.errorLog * 8 - max(0, 90 - stats.averageHumanMessageLength) * 0.08, clamped [0, 100]. Computed by the parser as facts.computedBaselines.lock_on.",
       "adjustmentGuide": {
-        "upward": "keyMessages show terse but surgically precise instructions (file path + identifier + action in < 90 chars) — silent-expert precision, not low intent.",
-        "downward": "keyMessages show long messages that still lack a clear deliverable — length without a target."
-      }
+        "upward": "evidenceAtoms show terse but surgically precise instructions (file path + identifier + action in < 90 chars) — silent-expert precision, not low intent.",
+        "downward": "evidenceAtoms show long messages that still lack a clear deliverable — length without a target."
+      },
+      "suggestionRecipes": [
+        {
+          "trigger": "directing.filePath < 0.15 && outcomeTotals.fileEditCount > 0",
+          "suggestionType": "prompt_rewrite",
+          "requiredEvidence": ["a keyMessage that names no file while asking for an edit"],
+          "promptPattern": "Name the exact file/function in the ask: '修改 <path>: <function> — <expected behavior>'."
+        },
+        {
+          "trigger": "directing.constraints < 0.1 && criticalIncidents contains a correction",
+          "suggestionType": "prompt_rewrite",
+          "requiredEvidence": ["the correction incident that a stated constraint would have prevented"],
+          "promptPattern": "State the boundary up front: '…但不要动 <X>，保持 <Y> 不变'."
+        }
+      ]
     },
     "scene_setting": {
       "category": "communication",
       "name": {"en": "Scene Setting", "zh": "铺场力"},
       "shortName": {"en": "Scene", "zh": "铺场"},
       "description": {
-        "en": "How much useful context your opening messages carry before Codex starts acting.",
-        "zh": "Codex 动手之前，你的开场消息携带了多少有用的上下文。"
+        "en": "How much useful context your session-opening messages carry before Codex starts acting.",
+        "zh": "Codex 动手之前，你每个会话的开场消息携带了多少有用的上下文。"
       },
       "primaryPosition": "opening",
       "signals": [
@@ -74,11 +88,25 @@
         "signalsByPosition.opening.ratios.codeOrData",
         "stats.averageHumanMessageLength"
       ],
-      "baselineFormula": "30 + opening.expectedBehavior * 22 + opening.constraints * 16 + opening.filePath * 16 + opening.codeOrData * 14 + clamp(stats.averageHumanMessageLength / 7, 0, 12), clamped [0, 100]",
+      "baselineFormula": "30 + opening.expectedBehavior * 22 + opening.constraints * 16 + opening.filePath * 16 + opening.codeOrData * 14 + clamp(stats.averageHumanMessageLength / 7, 0, 12), clamped [0, 100]. The opening bucket is the first 2 messages of EACH session. Computed by the parser as facts.computedBaselines.scene_setting.",
       "adjustmentGuide": {
         "upward": "Opening messages consistently paste real project context (file trees, configs, error logs, code) even without triggering keyword matches.",
         "downward": "Opening messages are long but generic — length without project-specific information."
-      }
+      },
+      "suggestionRecipes": [
+        {
+          "trigger": "opening.codeOrData < 0.1 && stats.sessions >= 3",
+          "suggestionType": "workflow_habit",
+          "requiredEvidence": ["an opening message that made Codex re-discover project state"],
+          "promptPattern": "Open sessions with a 3-line scene: what changed since last time, what you want now, where it lives."
+        },
+        {
+          "trigger": "projectAssets.hasAgentsMd == false && stats.sessions >= 5",
+          "suggestionType": "setup_action",
+          "requiredEvidence": ["repeated context re-explained across session openings"],
+          "promptPattern": "Move the repeated context into AGENTS.md so every session starts pre-briefed (pair with the architecture recipe)."
+        }
+      ]
     },
     "steering": {
       "category": "communication",
@@ -91,16 +119,30 @@
       "primaryPosition": "correcting",
       "signals": [
         "signalsByPosition.directing.ratios.asksVerify",
-        "signalsByPosition.correcting.ratios.correction",
-        "signalsByPosition.confirming.ratios.confirmation",
+        "signalsByPosition.correcting.substanceRatio",
+        "signalsByPosition.confirming.messageCount",
         "signalsByPosition.directing.ratios.errorLog",
         "outcomeTotals.abortRatio"
       ],
-      "baselineFormula": "38 + directing.asksVerify * 20 + correcting.correction * 16 + confirming.confirmation * 10 + directing.errorLog * 8 - outcomeTotals.abortRatio * 12, clamped [0, 100]",
+      "baselineFormula": "38 + directing.asksVerify * 20 + correctionSubstance * 16 + min(10, confirmShare * 30) + directing.errorLog * 8 - abortRatio * 12, clamped [0, 100]. correctionSubstance = share of corrections that carry a path/error/code (0.5 neutral when there are no corrections); confirmShare = confirming messages over all messages. Computed by the parser as facts.computedBaselines.steering.",
       "adjustmentGuide": {
-        "upward": "sampleExchanges show precise corrections with code/paths even without reasoning keywords (shows, doesn't tell).",
-        "downward": "Corrections are blunt ('no, wrong, redo') and never explain why — Codex can't learn from the feedback. Many aborted turns (outcomeTotals.abortRatio high)."
-      }
+        "upward": "evidenceAtoms show precise corrections with code/paths even without reasoning keywords (shows, doesn't tell).",
+        "downward": "Corrections are blunt ('no, wrong, redo') and never explain why — Codex can't learn from the feedback. Many aborted or silently dropped turns."
+      },
+      "suggestionRecipes": [
+        {
+          "trigger": "correcting.substanceRatio < 0.4 && correcting.messageCount >= 2",
+          "suggestionType": "prompt_rewrite",
+          "requiredEvidence": ["a blunt correction atom", "what the agent did next"],
+          "promptPattern": "Correct with coordinates: '不对 — 问题在 <file/line>，现在是 <actual>，应该是 <expected>'."
+        },
+        {
+          "trigger": "directing.asksVerify < 0.08 && outcomeTotals.fileEditCount > 5",
+          "suggestionType": "verification_loop",
+          "requiredEvidence": ["an edit-heavy episode with zero verification asks"],
+          "promptPattern": "End work requests with a proof clause: '改完后跑 <test/build command>，把结果贴给我'."
+        }
+      ]
     },
 
     "toolcraft": {
@@ -108,25 +150,48 @@
       "name": {"en": "Toolcraft", "zh": "工具调度"},
       "shortName": {"en": "Tools", "zh": "工具"},
       "description": {
-        "en": "How deliberately the collaboration uses the Codex platform — shell, patch, plan updates, MCP, search, image, subagents — and how reliably commands succeed.",
-        "zh": "协作中对 Codex 平台的有意使用 — shell、补丁、plan 更新、MCP、搜索、图像、子代理 — 以及命令的成功率。"
+        "en": "How deliberately the collaboration uses the Codex platform — shell, patch, plan updates, MCP, search, subagents — and how reliably commands succeed.",
+        "zh": "协作中对 Codex 平台的有意使用 — shell、补丁、plan 更新、MCP、搜索、子代理 — 以及命令的成功率。"
       },
       "primaryPosition": "global",
       "signals": [
         "toolcraftSummary.byCategory",
         "toolcraftSummary.commandSuccessRate",
-        "toolcraftSummary.planModeEntries",
+        "toolcraftSummary.planUpdates",
         "toolcraftSummary.webSearchCalls",
         "toolcraftSummary.browserCalls",
         "toolcraftSummary.mcpCalls",
-        "toolcraftSummary.subagentCalls"
+        "toolcraftSummary.subagentCalls",
+        "modernToolSummary.subagentLifecycle",
+        "modernToolSummary.mcpByServer",
+        "modernToolSummary.plans.planCompletionAvg"
       ],
-      "baselineFormula": "30 + min(20, count(toolcraftSummary.byCategory) * 4) + toolcraftSummary.commandSuccessRate * 18 + min(12, toolcraftSummary.planModeEntries * 3) + min(10, toolcraftSummary.webSearchCalls + toolcraftSummary.browserCalls + toolcraftSummary.mcpCalls) + min(10, toolcraftSummary.subagentCalls * 3), clamped [0, 100]",
-      "scoringPhilosophy": "Using shell + apply_patch competently is the baseline. Plan updates, MCP, search, and subagents add bonuses on top. A high command-success-rate matters. Reaching for advanced tools is rewarded; not reaching for them is not punished.",
+      "baselineFormula": "30 + min(20, count(byCategory) * 4) + commandSuccessRate * 18 + min(12, planUpdates * 3) + min(10, webSearchCalls + browserCalls + mcpCalls) + min(10, subagentCalls * 3), clamped [0, 100]. commandSuccessRate is 0.5 (neutral) when no command carried a readable exit code. Computed by the parser as facts.computedBaselines.toolcraft.",
+      "scoringPhilosophy": "Using shell + apply_patch competently is the baseline. Plan updates, MCP, search, and subagents add bonuses on top. Reaching for advanced tools is rewarded; not reaching for them is not punished. Orchestration quality (spawned agents actually waited on and closed, plans actually completed) matters more than raw counts — use modernToolSummary for the adjustment.",
       "adjustmentGuide": {
-        "upward": "sessionFlows show plan updates that led to substantive multi-file patches, or subagent/MCP usage that advanced the work cleanly (no retry churn afterward).",
-        "downward": "Many failed shell commands (low commandSuccessRate), or advanced tools invoked but the work stalled afterward — tool theater without leverage."
-      }
+        "upward": "workflowEpisodes show plan updates that led to substantive multi-file patches, subagent lifecycles that close cleanly (low orphanedEstimate), or MCP usage that advanced the work with a low error rate.",
+        "downward": "Many failed shell commands, orphaned subagents (spawned but never closed), plans that never progress past the first step, or advanced tools invoked with no follow-through — tool theater without leverage."
+      },
+      "suggestionRecipes": [
+        {
+          "trigger": "modernToolSummary.subagentLifecycle.orphanedEstimate > 0",
+          "suggestionType": "workflow_habit",
+          "requiredEvidence": ["the spawn/close counts from subagentLifecycle"],
+          "promptPattern": "Close the loop on every spawn: after wait_agent returns, fold the result into the main thread and close_agent."
+        },
+        {
+          "trigger": "toolcraftSummary.planUpdates == 0 && outcomeTotals.distinctFilesTouched >= 5",
+          "suggestionType": "workflow_habit",
+          "requiredEvidence": ["a multi-file episode that ran without a plan"],
+          "promptPattern": "For multi-file work, ask for a plan first: '先 update_plan 列步骤，我确认后再动手'."
+        },
+        {
+          "trigger": "modernToolSummary.web.searches > 10 && toolcraftSummary.mcpCalls == 0",
+          "suggestionType": "tool_adoption",
+          "requiredEvidence": ["top repeated web queries from modernToolSummary.web.topQueries"],
+          "promptPattern": "If the same domain keeps getting searched, wire the matching MCP server / docs source once instead."
+        }
+      ]
     },
     "architecture": {
       "category": "engineering",
@@ -147,12 +212,26 @@
         "projectAssets.hasTestsDir",
         "projectAssets.rootEntryCount"
       ],
-      "baselineFormula": "25 + (projectAssets.hasAgentsMd ? 20 : 0) + ((projectAssets.hasCodexDir || projectAssets.hasAgentsDir) ? 12 : 0) + (projectAssets.hasGit ? 12 : 0) + (projectAssets.hasManifest ? 12 : 0) + (projectAssets.hasReadme ? 8 : 0) + (projectAssets.hasTestsDir ? 8 : 0) + min(8, projectAssets.rootEntryCount / 8), clamped [0, 100]",
-      "applicabilityRule": "If projectAssets.cwdResolved is false, mark this dimension N/A — the recorded project directory could not be located on this machine, so filesystem inspection isn't possible.",
+      "baselineFormula": "25 + (hasAgentsMd ? 20 : 0) + ((hasCodexDir || hasAgentsDir) ? 12 : 0) + (hasGit ? 12 : 0) + (hasManifest ? 12 : 0) + (hasReadme ? 8 : 0) + (hasTestsDir ? 8 : 0) + min(8, rootEntryCount / 8), clamped [0, 100]. Computed by the parser as facts.computedBaselines.architecture.",
+      "applicabilityRule": "If projectAssets.cwdResolved is false, this dimension is N/A — the recorded project directory could not be located on this machine, so filesystem inspection isn't possible.",
       "adjustmentGuide": {
-        "upward": "AGENTS.md is present and substantive; repo is well-scaffolded (git + manifest + tests) — durable context Codex can rely on across sessions.",
-        "downward": "No AGENTS.md and little structure — Codex re-learns the project every session."
-      }
+        "upward": "AGENTS.md is present and the sessions show Codex relying on durable context (no re-explaining) — leverage across sessions.",
+        "downward": "No AGENTS.md and little structure — the openings show Codex re-learning the project every session."
+      },
+      "suggestionRecipes": [
+        {
+          "trigger": "projectAssets.hasAgentsMd == false && projectAssets.cwdResolved == true",
+          "suggestionType": "setup_action",
+          "requiredEvidence": ["conventions/commands repeated across sessions that belong in AGENTS.md"],
+          "promptPattern": "Generate a project-specific AGENTS.md draft from the observed commands, conventions, and pitfalls in this project's sessions — ready to paste."
+        },
+        {
+          "trigger": "projectAssets.hasTestsDir == false && outcomeTotals.fileEditCount > 10",
+          "suggestionType": "setup_action",
+          "requiredEvidence": ["the edit volume shipping without a test harness"],
+          "promptPattern": "Ask Codex to scaffold the smallest honest test harness for this stack and wire it to '<runner> test'."
+        }
+      ]
     },
     "tempo": {
       "category": "engineering",
@@ -168,13 +247,28 @@
         "stats.contextCompactions",
         "stats.errors",
         "outcomeTotals.cleanEndRatio",
-        "outcomeTotals.toolsPerHumanMsg"
+        "outcomeTotals.toolsPerHumanMsg",
+        "modernToolSummary.contextHygiene"
       ],
-      "baselineFormula": "72 - outcomeTotals.abortRatio * 28 - min(14, stats.contextCompactions * 3) - min(12, stats.errors * 3) + min(10, outcomeTotals.cleanEndRatio * 10) - max(0, outcomeTotals.toolsPerHumanMsg - 10) * 2, clamped [0, 100]",
+      "baselineFormula": "72 - abortRatio * 28 - min(14, contextCompactions * 3) - min(12, errors * 3) + min(10, cleanEndRatio * 10) - max(0, toolsPerHumanMsg - 10) * 2, clamped [0, 100]. abortRatio counts explicit aborts AND silently dropped turns (started but never completed). Computed by the parser as facts.computedBaselines.tempo.",
       "adjustmentGuide": {
-        "upward": "sessionFlows show clean arcs (setup → build → verify → close) with few aborts and steady progress.",
-        "downward": "Sessions thrash — repeated aborts, many compactions, or huge tool-per-message counts without matching progress."
-      }
+        "upward": "workflowEpisodes show clean arcs (setup → build → verify → close) with few aborts and steady durations.",
+        "downward": "Episodes thrash — repeated aborts, retry churn incidents, many compactions, or huge tool-per-message counts without matching progress."
+      },
+      "suggestionRecipes": [
+        {
+          "trigger": "criticalIncidents contains command_retry_churn",
+          "suggestionType": "workflow_habit",
+          "requiredEvidence": ["the churned command and its failure count"],
+          "promptPattern": "When a command fails twice, stop the loop: '这条命令连续失败了，先诊断原因再重试'."
+        },
+        {
+          "trigger": "stats.contextCompactions >= 2",
+          "suggestionType": "workflow_habit",
+          "requiredEvidence": ["the compaction count and session durations"],
+          "promptPattern": "Split long sessions at natural milestones — start a fresh thread with a 3-line handoff instead of riding one thread into compaction."
+        }
+      ]
     },
 
     "efficiency": {
@@ -193,19 +287,27 @@
         "outcomeTotals.cleanEndRatio",
         "outcomeTotals.toolsPerHumanMsg"
       ],
-      "baselineFormula": "35 + min(24, outcomeTotals.editsPerHumanMsg * 18) + min(16, outcomeTotals.filesPerHumanMsg * 18) + toolcraftSummary.commandSuccessRate * 12 + outcomeTotals.cleanEndRatio * 10 - max(0, outcomeTotals.toolsPerHumanMsg - 12) * 2, clamped [0, 100]",
+      "baselineFormula": "35 + min(24, editsPerHumanMsg * 18) + min(16, filesPerHumanMsg * 18) + commandSuccessRate * 12 + cleanEndRatio * 10 - max(0, toolsPerHumanMsg - 12) * 2, clamped [0, 100]. commandSuccessRate is 0.5 (neutral) when unmeasurable. Computed by the parser as facts.computedBaselines.efficiency.",
       "adjustmentGuide": {
-        "upward": "sessionOutcomes show a session that closed a task in 1-3 messages with multiple file edits — silent-expert efficiency.",
+        "upward": "workflowEpisodes show a session that closed a task in 1-3 messages with multiple file edits — silent-expert efficiency.",
         "downward": "High tool use but few distinct files touched — busywork, not real progress."
-      }
+      },
+      "suggestionRecipes": [
+        {
+          "trigger": "outcomeTotals.toolsPerHumanMsg > 15 && outcomeTotals.editsPerHumanMsg < 0.5",
+          "suggestionType": "prompt_rewrite",
+          "requiredEvidence": ["an episode with heavy tool use and few edits"],
+          "promptPattern": "Scope the exploration: '先只看 <dir/file>，确认 <question>，别展开全仓库扫描'."
+        }
+      ]
     },
     "proof_check": {
       "category": "outcome",
       "name": {"en": "Proof Check", "zh": "验证意识"},
       "shortName": {"en": "Proof", "zh": "验证"},
       "description": {
-        "en": "How consistently the work is backed by proof — tests, builds, lint, screenshots, renders, or explicit verification asks.",
-        "zh": "工作有多大程度被验证兜底 — 测试、构建、lint、截图、渲染，或明确的验证请求。"
+        "en": "How consistently the work is backed by proof — tests, builds, lint that actually ran (and passed), or explicit verification asks.",
+        "zh": "工作有多大程度被验证兜底 — 真正跑过（且通过）的测试、构建、lint，或明确的验证请求。"
       },
       "primaryPosition": "global",
       "signals": [
@@ -213,13 +315,27 @@
         "signalsByPosition.directing.ratios.asksVerify",
         "projectAssets.hasTestsDir",
         "toolcraftSummary.browserCalls",
-        "toolcraftSummary.imageCalls"
+        "toolcraftSummary.viewImageCalls"
       ],
-      "baselineFormula": "28 + min(34, outcomeTotals.proofCommands * 8) + directing.asksVerify * 18 + (projectAssets.hasTestsDir ? 8 : 0) + min(12, toolcraftSummary.browserCalls + toolcraftSummary.imageCalls), clamped [0, 100]",
+      "baselineFormula": "28 + min(34, proofCommands.passed * 8 + proofCommands.failed * 4 + proofCommands.unknown * 2) + directing.asksVerify * 18 + (hasTestsDir ? 8 : 0) + min(12, browserCalls + viewImageCalls), clamped [0, 100]. Only real verification runners count as proof (npm test, pytest, tsc, …) — `echo 验证` does not; image generation never counts, only inspection (view/screenshot). Computed by the parser as facts.computedBaselines.proof_check.",
       "adjustmentGuide": {
-        "upward": "User runs real verification (tests/builds/lint pass in shell, screenshots/renders inspected) and reacts to the results.",
+        "upward": "Proof commands pass and the user reacts to failures (a failed test followed by a fix and a re-run is excellent behavior).",
         "downward": "Implementation work with no test/build/check anywhere — shipped on faith."
-      }
+      },
+      "suggestionRecipes": [
+        {
+          "trigger": "outcomeTotals.fileEditCount > 0 && outcomeTotals.proofCommands.total == 0",
+          "suggestionType": "verification_loop",
+          "requiredEvidence": ["edited files from an episode", "the absence of any proof run"],
+          "promptPattern": "改完后运行 <detected test/build command for this stack> 并把结果贴给我，失败就先修复再收工。"
+        },
+        {
+          "trigger": "outcomeTotals.proofCommands.failed > outcomeTotals.proofCommands.passed",
+          "suggestionType": "workflow_habit",
+          "requiredEvidence": ["the failing proof commands"],
+          "promptPattern": "Make green the exit condition: '直到 <runner> 全绿才算完成，每轮贴摘要'."
+        }
+      ]
     },
     "completion": {
       "category": "outcome",
@@ -235,34 +351,48 @@
         "stats.agentMessages",
         "stats.turnCompletes",
         "outcomeTotals.abortRatio",
-        "stats.errors"
+        "stats.errors",
+        "stats.silentDrops"
       ],
-      "baselineFormula": "45 + outcomeTotals.cleanEndRatio * 35 + min(10, (stats.agentMessages / max(1, stats.turnCompletes)) * 3) - outcomeTotals.abortRatio * 18 - min(8, stats.errors * 2), clamped [0, 100]",
+      "baselineFormula": "45 + cleanEndRatio * 35 + min(10, (agentMessages / max(1, turnCompletes)) * 3) - abortRatio * 18 - min(8, errors * 2), clamped [0, 100]. cleanEndRatio = completed turns over started turns; silently dropped turns count against it. Computed by the parser as facts.computedBaselines.completion.",
       "adjustmentGuide": {
-        "upward": "sessionFlows show turns consistently completing with a final agent message and no abandoned aborts.",
+        "upward": "workflowEpisodes show turns consistently completing with a final agent message and no abandoned aborts.",
         "downward": "Turns trail off or get aborted mid-work without resolution."
-      }
+      },
+      "suggestionRecipes": [
+        {
+          "trigger": "stats.silentDrops + stats.turnAborts > stats.turnCompletes * 0.2",
+          "suggestionType": "workflow_habit",
+          "requiredEvidence": ["episodes with aborted/dropped turns"],
+          "promptPattern": "Before abandoning a turn, bank the state: '先停一下，总结当前进度和下一步，写进 <notes file>'."
+        }
+      ]
     }
   },
 
   "scoring": {
-    "method": "baseline + adjustment",
-    "baselineSource": "deterministic formula from facts (see each dimension's baselineFormula). Compute it, clamp to [0,100], round.",
-    "adjustmentRange": [-15, 15],
-    "adjustmentRequirement": "Must cite specific keyMessages / sampleExchanges / sessionFlows evidence in reasoning. No evidence → adjustment = 0.",
+    "method": "computed baseline + bounded evidence adjustment",
+    "baselineSource": "facts.computedBaselines — the parser computes each dimension's baselineFormula deterministically and applies confidence scaling. Do NOT recompute formulas by hand; read computedBaselines.<id>.confidenceScaled as the starting score.",
+    "adjustmentRange": {
+      "low": 5,
+      "medium": 10,
+      "high": 15,
+      "note": "Maximum ± adjustment depends on facts.confidenceLevel — thin data earns less discretionary movement."
+    },
+    "adjustmentRequirement": "Must cite specific evidenceAtoms / workflowEpisodes / criticalIncidents (by id where available) in reasoning. No evidence → adjustment = 0.",
     "confidenceScaling": {
-      "note": "Apply AFTER the baseline, BEFORE the adjustment. Reflects how much data backs the score.",
-      "low": "score = 50 + (baseline - 50) * 0.75. Surface a 'limited data' note in the report and diagnosis.",
-      "medium": "score = 50 + (baseline - 50) * 0.9.",
-      "high": "no scaling."
+      "note": "Already applied by the parser inside computedBaselines (low: 50+(b-50)*0.75, medium: 50+(b-50)*0.9, high: unchanged). Surface a 'limited data' note when confidenceLevel is low.",
+      "low": "already applied in computedBaselines",
+      "medium": "already applied in computedBaselines",
+      "high": "no scaling"
     },
     "naHandling": {
-      "rule": "A dimension is N/A if projectProfile.naDimensions includes its id OR its applicabilityRule fires. N/A dimensions have score=null, grade=null, applicable=false, and are excluded from category and overall averages.",
+      "rule": "A dimension is N/A when computedBaselines.<id>.applicable is false (profile naDimensions or applicabilityRule). N/A dimensions have score=null, grade=null, applicable=false, and are excluded from category and overall averages.",
       "displayLabel": {"en": "N/A", "zh": "不适用"}
     },
     "categoryScore": "Average of the applicable dimensions in the category, rounded.",
     "overallScore": "Weighted sum of category scores using projectProfile.categoryWeights, renormalized over categories that have a score. Rounded.",
-    "overallGradeNote": "Show the project profile next to the grade — a 'one-shot' B is not a 'long-running' B."
+    "overallGradeNote": "Show the project profile next to the grade — an 'automation' B is not a 'long-running' B."
   },
 
   "grades": [
@@ -293,19 +423,26 @@
       "label": {"en": "Learning / exploration", "zh": "学习探索"},
       "naDimensions": ["efficiency", "completion"],
       "categoryWeights": {"communication": 0.7, "engineering": 0.3, "outcome": 0}
+    },
+    "automation": {
+      "label": {"en": "Automation pipeline", "zh": "自动化流水线"},
+      "naDimensions": ["steering"],
+      "categoryWeights": {"communication": 0.25, "engineering": 0.35, "outcome": 0.4},
+      "note": "Most sessions are non-interactive `codex exec` runs. Communication dimensions judge the prompt templates; Steering is N/A because single-turn runs cannot be course-corrected. The report should state the automation share plainly."
     }
   },
 
   "diagnosis": {
     "purpose": "Independent of scoring. Turns the numbers into an actionable, evidence-grounded read of how this user works with Codex.",
     "components": [
-      {"id": "collaborationProfile", "description": "120-180 words describing how this user collaborates with Codex. Reference real behavior from facts (message style, tool usage, proof habits). No personality archetypes."},
+      {"id": "collaborationProfile", "description": "120-180 words describing how this user collaborates with Codex. Reference real behavior from evidenceAtoms, workflowEpisodes, and modernToolSummary (message style, tool usage, orchestration, proof habits). No personality archetypes."},
       {"id": "coreDiagnosis", "description": "60-100 words naming the single strongest strength and the single most critical bottleneck, each with evidence and the concrete cost of the bottleneck."},
       {"id": "crossDimensionReading", "description": "1-2 sentences interpreting how the dimension scores combine (e.g. 'high Lock-On + low Proof Check = you trust Codex's execution but not its judgment')."}
     ],
     "constraints": [
-      "Every claim cites evidence from keyMessages, sampleExchanges, sessionFlows, toolcraftSummary, or outcomeTotals.",
+      "Every claim cites evidence from evidenceAtoms (by id), workflowEpisodes, criticalIncidents, modernToolSummary, or the tool/outcome totals.",
       "Describe observable behavior, not personality. No fortune-teller tone.",
+      "If selfBaseline is present, anchor at least one claim against the user's own typical session ('half the proof density of your median session').",
       "Bilingual parity (en/zh) — same meaning, not a literal translation."
     ]
   },
@@ -315,8 +452,21 @@
     "forbidden": ["Starting with 'Strength:' / '强项：' (that's coreDiagnosis)", "Raw scores / ratios", "Category names as badges", "Generic praise"]
   },
 
+  "observations": {
+    "purpose": "Step 1 of suggestion generation. Before writing suggestions, list 8-12 grounded observations — each a single sentence stating a real, specific behavior pattern with evidenceRefs pointing at evidenceAtoms/criticalIncidents ids. Suggestions are then instantiated from the strongest observations.",
+    "required": ["text (bilingual)", "evidenceRefs (>=1 atom/incident id)", "dimensionId"]
+  },
+
   "suggestions": {
     "count": "MINIMUM 5, maximum 7. Never fewer than 5, even for high-scoring users.",
+    "types": {
+      "prompt_rewrite": "A better way to phrase the ask. Payload: promptRewrite (pastable string).",
+      "workflow_habit": "A repeatable multi-step habit. Payload: steps (3-5 concrete bullet strings) + optional promptRewrite.",
+      "setup_action": "A durable investment in the project. Payload: snippet (file content or shell command ready to paste) + optional steps.",
+      "tool_adoption": "A platform capability the user is leaving on the table. Payload: steps (how to wire it + first concrete use) + optional promptRewrite.",
+      "verification_loop": "A definition-of-done ritual. Payload: promptRewrite (the closing clause) + verifyBy."
+    },
+    "typeMix": "When the facts support it, at least 2 of the 5-7 suggestions must be non-prompt_rewrite types. Do not force it on genuinely conversation-only projects.",
     "priorityMapping": {
       "D (0-39)": "high (required)",
       "C (40-54)": "high (required)",
@@ -324,26 +474,31 @@
       "A (70-84)": "low (level-up move toward S)",
       "S (85-100)": "low (refinement to lock in the strength, or cross-pollinate to weaker dims)"
     },
+    "recipesFirst": "Check each dimension's suggestionRecipes triggers against the facts FIRST. A fired recipe becomes a suggestion instantiated with this user's real files, commands, and messages. Only invent free-form suggestions when no recipe fires or the evidence points somewhere the recipes don't cover.",
     "highScorerFillSources": [
       "Within a strong dimension — push from 82 → 90+ with a next-level habit.",
       "Cross-pollinate — apply a habit working in one dimension to a weaker one.",
-      "Platform leverage — a specific plan / subagent / MCP / proof move tied to the actual workflow.",
+      "Platform leverage — a specific plan / subagent / MCP / proof move tied to the actual workflow observed in modernToolSummary.",
       "Durable setup — AGENTS.md, tests, repo scaffolding the user hasn't invested in.",
       "Risk reduction — even strong scoring can hide brittleness (e.g. ships with no tests)."
     ],
     "required": [
+      "type (one of the five types)",
       "dimensionId",
       "priority (high/medium/low)",
       "title (bilingual, < 18 chars)",
-      "body (bilingual, 1-2 sentences, specific)",
-      "evidence (bilingual, 1 sentence quoting/paraphrasing real session content)",
-      "promptRewrite (bilingual, a concrete pastable prompt to try next time)",
+      "body (bilingual, 2-4 sentences: current behavior → its cost → what to change)",
+      "evidence (bilingual, 1-2 sentences quoting/paraphrasing real session content)",
+      "evidenceRefs (>= 2 ids from evidenceAtoms/criticalIncidents; 1 allowed only when the facts genuinely contain a single relevant atom)",
+      "payload per type (promptRewrite / steps / snippet)",
+      "verifyBy (bilingual — which facts metric should move on the next radar run, e.g. 'proofCommands.passed > 0')",
       "expectedImpact (bilingual, e.g. '+10-15 Proof Check')"
     ],
     "principles": [
-      "No empty platitudes. Not 'verify more' — instead 'After the change, run the relevant test/build and paste me the result.'",
+      "Anti-generic rule: if the suggestion still makes sense after deleting every project-specific noun (file, command, tool, message), rewrite it until it doesn't.",
+      "No empty platitudes. Not 'verify more' — instead 'After the change, run <the detected test command> and paste me the result.'",
       "Sort: high → medium → low; within a priority, by impact scope (largest first).",
-      "Every suggestion ships with a usable promptRewrite grounded in real evidence."
+      "Every suggestion names at least one real noun from this project: a file, a command, a tool, or a quoted message fragment."
     ]
   }
 }

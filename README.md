@@ -10,24 +10,27 @@
 
 ## Key features
 
-**🎯 Reads your actual Codex sessions, not synthetic prompts.** Codex Radar parses the real JSONL your agent already writes — every prompt you sent, every shell command and its exit code, every `apply_patch` edit, every plan update, MCP / web-search / image / subagent call. The score reflects how you actually worked, not how you answer a quiz.
+**🎯 Reads your actual Codex sessions, not synthetic prompts.** Codex Radar parses the real JSONL your agent already writes — every prompt you sent, every shell command and its exit code (both old and new rollout formats), every `apply_patch` edit, every plan update, MCP / web-search / subagent call. Subagent threads are excluded (their "user messages" are agent-authored) and `codex exec` batch runs are judged as an automation profile, not as conversation.
 
-**💬 Your Codex writes you a coaching note, not just a scoreboard.** A deterministic parser extracts the facts; then your own Codex model scores them against a transparent rubric — a formula baseline plus a bounded, evidence-cited ±15 adjustment — and writes a free-form collaboration diagnosis. Every claim points back to your real messages.
+**💬 Your Codex writes you a coaching note, not just a scoreboard.** A deterministic parser extracts the facts **and computes every formula baseline in code** — reproducible by construction. Your own Codex model then applies a bounded, evidence-cited adjustment (±5/±10/±15 depending on data confidence) and writes the free-form diagnosis. Every claim cites an id-addressable evidence atom from your real sessions.
 
-**📋 Every suggestion is a paste-ready prompt.** No "be more thoughtful" advice. Each improvement comes with a concrete prompt you can copy straight into your next thread, plus the dimension it lifts and the expected impact.
+**📋 Suggestions are typed interventions, not platitudes.** Prompt rewrites, workflow playbooks, paste-ready setup files (including a generated `AGENTS.md` draft), tool-adoption moves, and definition-of-done rituals — each grounded in cited evidence, each with a `verifyBy` metric your next report can check.
 
-**⚖️ Project-type-aware weighting.** A 3-message fix isn't judged on the same scale as a 50-session feature build. Codex Radar auto-classifies each project (`one-shot` / `feature-build` / `long-running` / `learning`) and applies different category weights. When a signal genuinely can't be evaluated — e.g. Architecture when the project directory no longer exists on this machine — the dimension is marked **N/A** instead of faked.
+**⚖️ Project-type-aware weighting.** A 3-message fix isn't judged on the same scale as a 50-session feature build — or a 200-run image pipeline. Codex Radar auto-classifies each project (`one-shot` / `feature-build` / `long-running` / `learning` / `automation`) and applies different category weights. When a signal genuinely can't be evaluated, the dimension is marked **N/A** instead of faked.
 
-**🛠 Scores how you drive the platform, not just how you talk.** The Engineering category reads shell-command success rate, patching, plan updates, MCP servers, web search, image tools, and subagent spawns. Architecture rewards durable setup — `AGENTS.md`, repo scaffolding, tests, manifests — the leverage most users underuse.
+**🛠 Scores how you drive the platform, not just how you talk.** Command success rate, plan-step completion, per-server MCP usage and error rates, subagent orchestration lifecycle (spawned vs actually closed), web research, skills, context hygiene. Proof means verification that actually ran — `echo 验证` doesn't count, and a failed test run you reacted to earns credit.
+
+**📈 Every run remembers the last one.** Reports keep a local history — the second run shows score trends and per-dimension deltas ("since last run: Proof Check +9"), closing the loop with each suggestion's `verifyBy`.
 
 **🔒 100% local, zero telemetry.** Read-only access to `~/.codex/sessions`. No API key, no cloud, no network calls. Reports are escaped single-file HTML written to `~/.codex-radar/reports/`.
 
 > **中文要点：**
-> - **🎯 评估你真实的 Codex 会话记录**，直接解析 prompt、shell 命令与退出码、`apply_patch` 编辑、plan 更新、MCP / 搜索 / 图像 / 子代理调用
-> - **💬 你的 Codex 亲自写诊断**：解析器提取事实，模型对照公开 rubric 打分（公式基线 + 引用证据的 ±15 微调）并撰写自由格式诊断，每条结论都指向你的真实消息
-> - **📋 每条建议都是可粘贴 prompt**，附带它能提升的维度和预期影响
-> - **⚖️ 按项目类型公平加权**：一次性任务 / 功能开发 / 长期项目 / 学习探索 各用不同权重；信号无法评估时维度标记 N/A，绝不假装给 50 分
-> - **🛠 专门评估你怎么用平台**：shell 成功率、补丁、plan、MCP、搜索、图像、子代理；Architecture 奖励 AGENTS.md 与仓库脚手架
+> - **🎯 评估你真实的 Codex 会话记录**：兼容新旧两代落盘格式；子代理线程被剔除（那些"用户消息"是 agent 写的）；`codex exec` 批量运行按自动化画像评判
+> - **💬 你的 Codex 亲自写诊断**：解析器提取事实并**用代码算出全部公式基线**（天然可复现），模型只做按置信度封顶的证据微调（±5/±10/±15）并撰写诊断，每条结论引用带 id 的证据原子
+> - **📋 建议是类型化干预**：话术改写 / 工作流 playbook / 可落盘的 setup 文件（含自动生成的 AGENTS.md 草稿）/ 工具接入 / 完成定义仪式，每条带 `verifyBy` 指标供下次报告核对
+> - **⚖️ 按项目类型公平加权**：一次性 / 功能开发 / 长期 / 学习 / **自动化** 各用不同权重；无法评估的维度标记 N/A，绝不假装给 50 分
+> - **🛠 专门评估你怎么用平台**：命令成功率、plan 步骤完成度、MCP 按服务器统计与错误率、子代理编排闭环（spawn 了几个、close 了几个）、skills、上下文卫生；`echo 验证` 不算验证
+> - **📈 每次运行都记得上一次**：本地历史 → 第二次起显示趋势与各维度 delta（"较上次：验证意识 +9"）
 > - **🔒 100% 本地、零上传**：只读访问 `~/.codex/sessions`，无 API key，无网络请求
 >
 > 完整中文版 → [README_zh.md](./README_zh.md)
@@ -48,11 +51,13 @@ Ask Codex to run the plugin and you get a single-file, professional, readable HT
 | **Engineering** | Toolcraft 工具调度 · Architecture 工程脚手架 · Tempo 推进节奏 |
 | **Outcome** | Efficiency 产出效率 · Proof Check 验证意识 · Completion 闭环完成 |
 
-**Diagnosis** — your strongest signal, your main bottleneck, a collaboration summary, and a cross-category pattern read — all computed from your own session, with per-dimension evidence shown inline.
+**Diagnosis** — your strongest signal, your main bottleneck, a collaboration summary, and a cross-category pattern read — all computed from your own sessions, every claim citing clickable evidence.
 
-**Improvement prompts** — a prioritized set of paste-ready prompt rewrites (up to 7), one for each dimension with clear room to improve, each tagged with its expected score impact.
+**Improvement plan** — 5-7 typed suggestions (prompt rewrites, workflow playbooks, setup files, tool adoptions, verification rituals), each with cited evidence, a copy button, and a `verifyBy` metric — plus a generated `AGENTS.md` draft when your project lacks one.
 
-**Signals & metrics** — top tools, tool categories, project assets (`AGENTS.md`, `.git`, tests, manifests), command success rate, context compactions, and a key-messages table with the signals detected in each.
+**Session trails** — friction points (retry churn, corrections, aborted turns), a drill-down of recent sessions (duration, opening ask, closing message, proof runs), and the cited evidence atoms.
+
+**Signals & metrics** — tool categories, per-server MCP usage, subagent orchestration lifecycle, plan completion, skills, context hygiene, project assets, command success rate — and from the second run, a score trend with per-dimension deltas.
 
 ---
 
@@ -123,11 +128,11 @@ See [PRIVACY.md](./PRIVACY.md) for the full data map.
 
 ## How scoring works
 
-**Two layers, mirroring [Claude Radar](https://github.com/LeifDiao/claude-radar):**
+**Three layers, mirroring [Claude Radar](https://github.com/LeifDiao/claude-radar):**
 
-1. **Facts** — `parse-codex-project.mjs` reads the matching session files and extracts countable signals (message patterns, tool categories, command exit codes, patch events, proof commands, project assets). Deterministic: same input → same facts.
-2. **Scoring + diagnosis** — your own Codex model reads those facts and `data/rubric.json`, computes each dimension's formula baseline, applies a bounded ±15 evidence-based adjustment, then writes a free-form diagnosis and paste-ready prompts. The rubric is the public scoring constitution.
-3. **Render** — `render-report.mjs` turns the report JSON into a single self-contained HTML file.
+1. **Facts + baselines** — `parse-codex-project.mjs` classifies sessions (interactive / automation / subagent), joins tool calls to their outputs across both rollout formats, extracts countable signals plus an id-addressable evidence layer (atoms, episodes, incidents), and **computes all 9 formula baselines in code**. Deterministic: same input → same facts, same baselines.
+2. **Adjustment + diagnosis** — your own Codex model reads the facts and `data/rubric.json`, applies a bounded confidence-capped adjustment per dimension, writes grounded observations, the diagnosis, and typed suggestions instantiated from per-dimension recipes.
+3. **Render** — `render-report.mjs` validates the report schema, appends to the local history, injects trend + delta, and produces a single self-contained HTML file.
 
 The analysis runs inside your own Codex session — the plugin makes no network calls of its own and needs no separate API key.
 
@@ -139,11 +144,11 @@ The analysis runs inside your own Codex session — the plugin makes no network 
 
 All scoring inputs live in [`plugins/codex-radar/data/rubric.json`](./plugins/codex-radar/data/rubric.json):
 
-- 9 dimension definitions (English + 中文) and their categories
-- 4 project profiles with per-profile category weight tables
-- Grade thresholds (S / A / B / C / D)
+- 9 dimension definitions (English + 中文), adjustment guides, and per-dimension suggestion recipes
+- 5 project profiles (including `automation`) with per-profile category weight tables
+- Confidence-based adjustment caps and grade thresholds (S / A / B / C / D)
 
-Want scoring to match your team's standards? Edit this file and the dimension formulas in `parse-codex-project.mjs` — the parser re-reads the rubric on every run.
+Want scoring to match your team's standards? Edit the rubric and the executable formulas in `parse-codex-project.mjs` — then run `node --test tests/*.test.mjs`; the fixture suite keeps the parser honest across both Codex rollout formats.
 
 ---
 
@@ -154,20 +159,25 @@ This repo is itself a Codex plugin marketplace.
 ```text
 codex-radar/
 ├── .agents/plugins/marketplace.json      # Codex marketplace manifest
+├── .github/workflows/test.yml            # CI: syntax checks + fixture tests
 ├── docs/
 │   ├── index.html                        # GitHub Pages landing page
 │   ├── METHODOLOGY.md / METHODOLOGY_zh.md # scoring spec (EN + 中文)
+├── tests/                                # fixture-based regression suite (node --test)
 └── plugins/
     └── codex-radar/
         ├── .codex-plugin/plugin.json      # plugin manifest
-        ├── data/rubric.json               # 9-dim definitions + profile weights
+        ├── data/rubric.json               # 9-dim definitions, recipes, profile weights
+        ├── viewer/template.html           # the single-file dashboard shell
         └── skills/analyze/
-            ├── SKILL.md                    # orchestration: detect → parse → render
+            ├── SKILL.md                    # orchestration: detect → parse → adjust → render
             └── scripts/
-                ├── lib.mjs                 # shared Codex session helpers
-                ├── list-codex-projects.mjs # scan ~/.codex/sessions + cwd match
-                ├── parse-codex-project.mjs # signal extraction → facts JSON (no scoring)
-                └── render-report.mjs       # report JSON → single-file HTML
+                ├── lib.mjs                 # shared helpers + incremental meta cache
+                ├── signals.mjs             # message classifiers, proof/exit-code extractors
+                ├── list-codex-projects.mjs # project list: kinds breakdown + noise folding
+                ├── compute-baseline.mjs    # your per-session metric distributions (cached)
+                ├── parse-codex-project.mjs # facts + evidence + computed baselines
+                └── render-report.mjs       # validate → history/delta → single-file HTML
 ```
 
 Zero runtime dependencies.

@@ -571,6 +571,82 @@
     .suggestion, .scorecard, .dim-detail-card, .tool-block, .hero, .card { break-inside: avoid; }
   }
 
+  /* ── v2.1 additions ── */
+  .banner {
+    border: 1px solid rgba(234,179,8,0.35); background: rgba(234,179,8,0.08);
+    border-radius: 10px; padding: 10px 14px; margin-bottom: 18px;
+    font-size: 12.5px; color: var(--text-2); line-height: 1.6;
+  }
+  .banner strong { color: #eab308; }
+  .banner ul { margin: 4px 0 0 18px; padding: 0; }
+
+  .type-pill {
+    font-size: 10px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase;
+    padding: 2.5px 8px; border-radius: 999px; white-space: nowrap;
+    background: var(--bg-3); color: var(--text-3);
+  }
+  .type-pill[data-type="prompt_rewrite"] { background: rgba(59,130,246,0.14); color: #3b82f6; }
+  .type-pill[data-type="workflow_habit"] { background: rgba(168,85,247,0.14); color: #a855f7; }
+  .type-pill[data-type="setup_action"] { background: rgba(34,197,94,0.14); color: #22c55e; }
+  .type-pill[data-type="tool_adoption"] { background: rgba(249,115,22,0.14); color: #f97316; }
+  .type-pill[data-type="verification_loop"] { background: rgba(236,72,153,0.14); color: #ec4899; }
+
+  .suggestion-steps { margin: 10px 0 12px 0; padding-left: 22px; font-size: 13px; color: var(--text-2); line-height: 1.7; }
+  .suggestion-steps li { margin-bottom: 4px; }
+  .snippet-block {
+    margin: 10px 0 12px; border: 1px solid var(--border-1); border-radius: 8px; overflow: hidden;
+  }
+  .snippet-block .prompt-rewrite-text { white-space: pre-wrap; font-size: 12px; max-height: 300px; overflow-y: auto; }
+  .verify-by {
+    display: inline-flex; align-items: center; gap: 6px; margin-top: 8px; margin-right: 10px;
+    font-size: 11.5px; color: var(--text-3); background: var(--bg-3);
+    border-radius: 6px; padding: 4px 9px;
+  }
+  .verify-by::before { content: "✓"; color: #22c55e; font-weight: 700; }
+  .evidence-refs { display: inline-flex; gap: 5px; margin-left: 8px; vertical-align: middle; }
+  .evidence-ref {
+    font-size: 10px; font-family: var(--mono, monospace); color: var(--text-4);
+    background: var(--bg-3); border-radius: 4px; padding: 1.5px 5px; cursor: pointer;
+  }
+  .evidence-ref:hover { color: var(--accent); }
+
+  .delta-badge { font-size: 11.5px; font-weight: 700; margin-left: 8px; vertical-align: middle; }
+  .delta-badge.up { color: #22c55e; }
+  .delta-badge.down { color: #ef4444; }
+  .delta-badge.flat { color: var(--text-4); }
+
+  .trend-card { margin-top: 18px; }
+  .trend-svg { width: 100%; height: 90px; display: block; }
+  .trend-meta { font-size: 11.5px; color: var(--text-4); margin-top: 6px; }
+
+  .episode { border: 1px solid var(--border-1); border-radius: 10px; margin-bottom: 10px; background: var(--bg-2); }
+  .episode summary {
+    display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+    padding: 10px 14px; cursor: pointer; list-style: none; font-size: 12.5px; color: var(--text-2);
+  }
+  .episode summary::-webkit-details-marker { display: none; }
+  .episode-kind { font-size: 10px; font-weight: 700; text-transform: uppercase; padding: 2px 7px; border-radius: 999px; background: var(--bg-3); color: var(--text-3); }
+  .episode-kind[data-kind="automation"] { background: rgba(249,115,22,0.14); color: #f97316; }
+  .episode-stats { margin-left: auto; display: flex; gap: 10px; font-size: 11px; color: var(--text-4); font-variant-numeric: tabular-nums; }
+  .episode-body { padding: 4px 14px 12px; font-size: 12.5px; color: var(--text-3); line-height: 1.65; border-top: 1px dashed var(--border-1); }
+  .episode-body .msg { margin-top: 8px; padding: 8px 10px; background: var(--bg-3); border-radius: 8px; font-size: 12px; }
+  .episode-body .msg-label { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-4); margin-bottom: 3px; }
+  .episode-flag { color: #ef4444; font-weight: 600; }
+
+  .incident { display: flex; gap: 10px; padding: 9px 12px; border-radius: 8px; background: var(--bg-2); border: 1px solid var(--border-1); margin-bottom: 8px; font-size: 12.5px; color: var(--text-2); line-height: 1.55; }
+  .incident-icon { flex: 0 0 auto; }
+
+  .atoms-block { margin-top: 14px; }
+  .atom { padding: 9px 12px; border-left: 2px solid var(--border-1); margin-bottom: 8px; font-size: 12px; color: var(--text-3); line-height: 1.6; }
+  .atom .atom-id { font-family: var(--mono, monospace); font-size: 10px; color: var(--accent); margin-right: 8px; }
+  .atom .atom-after { color: var(--text-4); font-size: 11px; margin-top: 3px; }
+  .atom.highlight { border-left-color: var(--accent); background: var(--bg-2); }
+
+  .mcp-row { display: flex; justify-content: space-between; gap: 8px; font-size: 12.5px; color: var(--text-2); padding: 5px 0; border-bottom: 1px dashed var(--border-1); }
+  .mcp-row .err { color: #ef4444; }
+
+  .agents-draft-card { margin-top: 16px; }
+
   /* Smooth scroll */
   html { scroll-behavior: smooth; }
 </style>
@@ -611,6 +687,10 @@
         <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 22 8.5 22 15.5 12 22 2 15.5 2 8.5"/><polyline points="12 22 12 15.5"/><polyline points="22 8.5 12 15.5 2 8.5"/><polyline points="2 15.5 12 8.5 22 15.5"/><polyline points="12 2 12 8.5"/></svg>
         <span data-en="Dimensions" data-zh="九维详解"></span>
       </a>
+      <a class="nav-item" href="#sessions" data-section="sessions">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+        <span data-en="Sessions" data-zh="会话轨迹"></span>
+      </a>
       <a class="nav-item" href="#toolcraft" data-section="toolcraft">
         <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
         <span data-en="Toolcraft" data-zh="工具与架构"></span>
@@ -626,6 +706,8 @@
       <div class="breadcrumb" id="breadcrumb"></div>
       <div class="topbar-meta" id="topbarMeta"></div>
     </div>
+
+    <div id="warningsBanner"></div>
 
     <!-- ─── Overview ─── -->
     <section class="section" id="overview">
@@ -654,6 +736,8 @@
       <div style="height: 18px"></div>
 
       <div class="scorecards" id="scorecards"></div>
+
+      <div id="trendCard"></div>
     </section>
 
     <!-- ─── Diagnosis ─── -->
@@ -682,6 +766,18 @@
         <div class="section-hint" data-en="Copy these into your next session" data-zh="复制到下一次会话直接用"></div>
       </div>
       <div class="suggestions" id="suggestions"></div>
+      <div id="agentsDraft"></div>
+    </section>
+
+    <!-- ─── Sessions ─── -->
+    <section class="section" id="sessions">
+      <div class="section-header">
+        <div class="section-title" data-en="SESSION TRAILS" data-zh="会话轨迹"></div>
+        <div class="section-hint" data-en="Where the collaboration flowed — and where it struggled" data-zh="协作顺畅与卡壳的现场"></div>
+      </div>
+      <div id="incidents"></div>
+      <div id="episodes"></div>
+      <div class="atoms-block" id="atoms"></div>
     </section>
 
     <!-- ─── Dimensions ─── -->
@@ -738,11 +834,34 @@
     days: { en: 'days', zh: '天' },
     confidence: { en: 'confidence', zh: '可信度' },
     promptRewrite: { en: 'TRY THIS PROMPT', zh: '复制这段试试' },
+    snippet: { en: 'PASTE-READY', zh: '可直接落盘' },
+    steps: { en: 'PLAYBOOK', zh: '操作步骤' },
+    verifyBy: { en: 'Verify next run:', zh: '下次运行验证：' },
     copy: { en: 'Copy', zh: '复制' },
     copied: { en: 'Copied', zh: '已复制' },
     footer: { en: 'Codex Radar — Local analysis, zero telemetry.', zh: 'Codex Radar — 全本地分析，零数据上传。' },
     project: { en: 'Project', zh: '项目' },
-    overall: { en: 'Overall', zh: '总分' }
+    overall: { en: 'Overall', zh: '总分' },
+    sinceLast: { en: 'since last run', zh: '较上次' },
+    trendTitle: { en: 'SCORE TREND', zh: '分数趋势' },
+    incidentsTitle: { en: 'Friction points', zh: '卡壳点' },
+    episodesTitle: { en: 'Recent sessions', zh: '近期会话' },
+    atomsTitle: { en: 'Cited evidence', zh: '引用的证据' },
+    automationShare: { en: 'automation runs', zh: '自动化运行' },
+    subagentNote: { en: 'subagent threads (excluded from scoring)', zh: '个子代理线程（不参与打分）' },
+    agentsDraftTitle: { en: 'AGENTS.md DRAFT — generated from your sessions', zh: 'AGENTS.md 草稿 — 由你的会话史生成' },
+    warningsTitle: { en: 'Heads-up', zh: '注意' },
+    proof: { en: 'proof', zh: '验证' },
+    edits: { en: 'edits', zh: '次编辑' },
+    failedCmd: { en: 'failed cmds', zh: '失败命令' },
+    minutes: { en: 'min', zh: '分钟' }
+  };
+  const TYPE_LABELS = {
+    prompt_rewrite: { en: 'Prompt', zh: '话术' },
+    workflow_habit: { en: 'Workflow', zh: '工作流' },
+    setup_action: { en: 'Setup', zh: '脚手架' },
+    tool_adoption: { en: 'Tool', zh: '工具' },
+    verification_loop: { en: 'Verify', zh: '验证环' }
   };
 
   function gradeFromScore(s) {
@@ -833,23 +952,78 @@
       metaItems.push(days + ' ' + tc('days'));
     }
     if (profile.confidence) metaItems.push(profile.confidence + ' ' + tc('confidence'));
+    if (profile.automationShare > 0) metaItems.push(Math.round(profile.automationShare * 100) + '% ' + tc('automationShare'));
+    if (profile.subagentSessionsExcluded > 0) metaItems.push(profile.subagentSessionsExcluded + ' ' + tc('subagentNote'));
     heroMetaLine.innerHTML = metaItems.map(s => '<span>' + escapeHtml(s) + '</span>').join('');
 
     const gradeLetter = document.getElementById('gradeLetter');
     gradeLetter.textContent = grade;
     gradeLetter.style.color = GRADE_COLORS[grade] || '#888';
     document.getElementById('gradeLabel').textContent = (GRADE_DESC[grade] && GRADE_DESC[grade][lang]) || '';
-    document.getElementById('gradeScore').textContent = (report.overallScore != null ? report.overallScore : '–') + ' / 100';
+    document.getElementById('gradeScore').innerHTML = escapeHtml((report.overallScore != null ? report.overallScore : '–') + ' / 100') +
+      (report.delta && report.delta.overall != null ? deltaBadge(report.delta.overall) : '');
 
+    renderBanner(report);
     renderScorecards(report);
+    renderTrend(report);
     renderDiagnosis(report);
     renderSuggestions(report);
+    renderAgentsDraft(report);
     renderDimDetails(report);
+    renderSessions(report);
     renderToolcraft(report);
 
     document.getElementById('footer').textContent = tc('footer');
 
     setupNavObserver();
+    setupCopyButtons();
+  }
+
+  function deltaBadge(value, opts) {
+    if (value == null || !isFinite(value)) return '';
+    const rounded = Math.round(value);
+    if (rounded === 0) return '';
+    const cls = rounded > 0 ? 'up' : 'down';
+    const sign = rounded > 0 ? '+' : '';
+    const suffix = (opts && opts.label) ? ' ' + tc('sinceLast') : '';
+    return '<span class="delta-badge ' + cls + '">' + sign + rounded + suffix + '</span>';
+  }
+
+  function renderBanner(report) {
+    const wrap = document.getElementById('warningsBanner');
+    const items = [].concat(report.parserWarnings || [], report.schemaWarnings || []);
+    if (!items.length) { wrap.innerHTML = ''; return; }
+    wrap.innerHTML = '<div class="banner"><strong>' + tc('warningsTitle') + '</strong>' +
+      '<ul>' + items.map(w => '<li>' + escapeHtml(w) + '</li>').join('') + '</ul></div>';
+  }
+
+  function renderTrend(report) {
+    const wrap = document.getElementById('trendCard');
+    const history = (report.history || []).filter(h => typeof h.overallScore === 'number');
+    const points = history.map(h => ({ score: h.overallScore, at: h.generatedAt }));
+    // history already includes previous runs only; append the current run
+    points.push({ score: report.overallScore, at: report.generatedAt, current: true });
+    if (points.length < 2) { wrap.innerHTML = ''; return; }
+    const w = 600, h = 80, pad = 8;
+    const min = Math.min(...points.map(p => p.score));
+    const max = Math.max(...points.map(p => p.score));
+    const span = Math.max(10, max - min);
+    const x = i => pad + (w - 2 * pad) * (points.length === 1 ? 0.5 : i / (points.length - 1));
+    const y = s => h - pad - (h - 2 * pad) * ((s - min) / span);
+    const line = points.map((p, i) => (i ? 'L' : 'M') + x(i).toFixed(1) + ',' + y(p.score).toFixed(1)).join(' ');
+    const dots = points.map((p, i) =>
+      '<circle cx="' + x(i).toFixed(1) + '" cy="' + y(p.score).toFixed(1) + '" r="' + (p.current ? 4 : 2.5) + '" fill="' + (p.current ? 'var(--accent, #3b82f6)' : 'currentColor') + '" opacity="' + (p.current ? 1 : 0.5) + '"/>' +
+      '<text x="' + x(i).toFixed(1) + '" y="' + (y(p.score) - 7).toFixed(1) + '" text-anchor="middle" font-size="9" fill="currentColor" opacity="0.7">' + p.score + '</text>'
+    ).join('');
+    const overallDelta = report.delta && report.delta.overall != null ? deltaBadge(report.delta.overall, { label: true }) : '';
+    wrap.innerHTML =
+      '<div class="card trend-card">' +
+        '<div class="card-label"><span class="label-dot"></span><span>' + tc('trendTitle') + '</span>' + overallDelta + '</div>' +
+        '<svg class="trend-svg" viewBox="0 0 ' + w + ' ' + h + '" preserveAspectRatio="none" style="color: var(--text-3)">' +
+          '<path d="' + line + '" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.6"/>' + dots +
+        '</svg>' +
+        '<div class="trend-meta">' + points.length + ' runs · ' + formatDate(points[0].at) + ' → ' + formatDate(points[points.length - 1].at) + '</div>' +
+      '</div>';
   }
 
   function renderScorecards(report) {
@@ -888,8 +1062,9 @@
 
       let scoreBlock = '';
       if (catScore != null) {
+        const catDelta = report.delta && report.delta.categories ? report.delta.categories[cat] : null;
         scoreBlock = '<div class="scorecard-score-block">' +
-          '<div class="scorecard-num" style="color:' + GRADE_COLORS[catGrade] + '">' + catScore + '</div>' +
+          '<div class="scorecard-num" style="color:' + GRADE_COLORS[catGrade] + '">' + catScore + (catDelta != null ? deltaBadge(catDelta) : '') + '</div>' +
           '<div class="scorecard-grade" style="background:' + GRADE_BG[catGrade] + ';color:' + GRADE_COLORS[catGrade] + '">' + catGrade + '</div>' +
           '</div>';
       } else {
@@ -926,38 +1101,87 @@
       const priority = s.priority || 'medium';
       const dimId = s.dimensionId;
       const matchedDim = dimId ? (report.dimensions || []).find(d => d.id === dimId) : null;
+      const typeLabel = s.type && TYPE_LABELS[s.type] ? (TYPE_LABELS[s.type][lang] || TYPE_LABELS[s.type].en) : null;
+      const refsHtml = (s.evidenceRefs && s.evidenceRefs.length)
+        ? '<span class="evidence-refs">' + s.evidenceRefs.map(r => '<span class="evidence-ref" data-ref="' + escapeHtml(r) + '">' + escapeHtml(r) + '</span>').join('') + '</span>'
+        : '';
+      const stepsList = Array.isArray(s.steps) ? s.steps : (s.steps && typeof s.steps === 'object' ? (s.steps[lang] || s.steps.en || s.steps.zh) : null);
+      const stepsHtml = (Array.isArray(stepsList) && stepsList.length)
+        ? '<div class="prompt-rewrite-label" style="border:none;padding:0 0 2px 0"><span>' + tc('steps') + '</span></div>' +
+          '<ol class="suggestion-steps">' + stepsList.map(step => '<li>' + escapeHtml(t(step)) + '</li>').join('') + '</ol>'
+        : '';
+      const promptHtml = s.promptRewrite ? (
+        '<div class="prompt-rewrite-block">' +
+          '<div class="prompt-rewrite-label">' +
+            '<span>' + tc('promptRewrite') + '</span>' +
+            '<button class="copy-btn" data-copy-target="prompt-' + idx + '">' + tc('copy') + '</button>' +
+          '</div>' +
+          '<div class="prompt-rewrite-text" id="prompt-' + idx + '">' + escapeHtml(t(s.promptRewrite)) + '</div>' +
+        '</div>'
+      ) : '';
+      const snippetHtml = s.snippet ? (
+        '<div class="prompt-rewrite-block snippet-block">' +
+          '<div class="prompt-rewrite-label">' +
+            '<span>' + tc('snippet') + '</span>' +
+            '<button class="copy-btn" data-copy-target="snippet-' + idx + '">' + tc('copy') + '</button>' +
+          '</div>' +
+          '<div class="prompt-rewrite-text" id="snippet-' + idx + '">' + escapeHtml(typeof s.snippet === 'string' ? s.snippet : t(s.snippet)) + '</div>' +
+        '</div>'
+      ) : '';
       const div = document.createElement('div');
       div.className = 'suggestion';
       div.innerHTML =
         '<div class="suggestion-head">' +
           '<span class="priority-pill priority-' + priority + '">' + priority + '</span>' +
+          (typeLabel ? '<span class="type-pill" data-type="' + escapeHtml(s.type) + '">' + escapeHtml(typeLabel) + '</span>' : '') +
           (matchedDim ? '<span class="dim-tag">' + escapeHtml(t(matchedDim.name)) + '</span>' : '') +
           '<div class="suggestion-title">' + escapeHtml(t(s.title)) + '</div>' +
         '</div>' +
         '<div class="suggestion-body">' + escapeHtml(t(s.body)) + '</div>' +
-        (s.evidence ? '<div class="suggestion-evidence">' + escapeHtml(t(s.evidence)) + '</div>' : '') +
-        (s.promptRewrite ? (
-          '<div class="prompt-rewrite-block">' +
-            '<div class="prompt-rewrite-label">' +
-              '<span>' + tc('promptRewrite') + '</span>' +
-              '<button class="copy-btn" data-idx="' + idx + '">' + tc('copy') + '</button>' +
-            '</div>' +
-            '<div class="prompt-rewrite-text" id="prompt-' + idx + '">' + escapeHtml(t(s.promptRewrite)) + '</div>' +
-          '</div>'
-        ) : '') +
-        (s.expectedImpact ? '<div class="expected-impact">' + escapeHtml(t(s.expectedImpact)) + '</div>' : '');
+        (s.evidence ? '<div class="suggestion-evidence">' + escapeHtml(t(s.evidence)) + refsHtml + '</div>' : '') +
+        stepsHtml + promptHtml + snippetHtml +
+        '<div>' +
+          (s.verifyBy ? '<span class="verify-by">' + tc('verifyBy') + ' ' + escapeHtml(t(s.verifyBy)) + '</span>' : '') +
+          (s.expectedImpact ? '<span class="expected-impact">' + escapeHtml(t(s.expectedImpact)) + '</span>' : '') +
+        '</div>';
       sDiv.appendChild(div);
     });
+  }
 
-    sDiv.querySelectorAll('.copy-btn').forEach(btn => {
+  function renderAgentsDraft(report) {
+    const wrap = document.getElementById('agentsDraft');
+    if (!report.agentsMdDraft) { wrap.innerHTML = ''; return; }
+    wrap.innerHTML =
+      '<div class="card agents-draft-card">' +
+        '<div class="prompt-rewrite-label" style="border:none;padding:0 0 8px 0">' +
+          '<span class="card-label"><span class="label-dot"></span>' + tc('agentsDraftTitle') + '</span>' +
+          '<button class="copy-btn" data-copy-target="agents-draft-text">' + tc('copy') + '</button>' +
+        '</div>' +
+        '<div class="prompt-rewrite-text" id="agents-draft-text" style="white-space:pre-wrap;max-height:340px;overflow-y:auto">' +
+          escapeHtml(typeof report.agentsMdDraft === 'string' ? report.agentsMdDraft : t(report.agentsMdDraft)) +
+        '</div>' +
+      '</div>';
+  }
+
+  function setupCopyButtons() {
+    document.querySelectorAll('.copy-btn[data-copy-target]').forEach(btn => {
       btn.addEventListener('click', () => {
-        const idx = btn.dataset.idx;
-        const text = document.getElementById('prompt-' + idx).textContent;
-        navigator.clipboard.writeText(text).then(() => {
+        const target = document.getElementById(btn.dataset.copyTarget);
+        if (!target) return;
+        navigator.clipboard.writeText(target.textContent).then(() => {
           btn.textContent = tc('copied');
           btn.classList.add('copied');
           setTimeout(() => { btn.textContent = tc('copy'); btn.classList.remove('copied'); }, 1500);
         });
+      });
+    });
+    document.querySelectorAll('.evidence-ref[data-ref]').forEach(chip => {
+      chip.addEventListener('click', () => {
+        const atom = document.getElementById('atom-' + chip.dataset.ref);
+        if (!atom) return;
+        atom.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        atom.classList.add('highlight');
+        setTimeout(() => atom.classList.remove('highlight'), 2500);
       });
     });
   }
@@ -973,14 +1197,22 @@
       const grade = d.grade || (d.score != null ? gradeFromScore(d.score) : null);
       const color = grade ? GRADE_COLORS[grade] : 'var(--text-5)';
       const catName = (CAT_NAMES[d.category] && CAT_NAMES[d.category][lang]) || d.category;
+      const dimDelta = report.delta && report.delta.dimensions ? report.delta.dimensions[d.id] : null;
+      const scoreBreakdown = (!isNA && typeof d.baseline === 'number')
+        ? '<div style="font-size:10.5px;color:var(--text-4);margin-top:2px">' +
+            (lang === 'zh' ? '基线 ' : 'baseline ') + d.baseline +
+            (typeof d.adjustment === 'number' && d.adjustment !== 0 ? ' ' + (d.adjustment > 0 ? '+' : '') + d.adjustment + (lang === 'zh' ? ' 证据微调' : ' evidence adj.') : '') +
+          '</div>'
+        : '';
       card.innerHTML =
         '<div class="dim-detail-cat">' + escapeHtml(catName) + '</div>' +
         '<div class="dim-detail-head">' +
           '<div class="dim-detail-name">' + escapeHtml(t(d.name)) + '</div>' +
           '<div class="dim-detail-score ' + (isNA ? 'na' : '') + '" style="color:' + color + '">' +
-            (isNA ? 'N/A' : (d.score != null ? d.score : '–')) +
+            (isNA ? 'N/A' : (d.score != null ? d.score : '–')) + (dimDelta != null ? deltaBadge(dimDelta) : '') +
           '</div>' +
         '</div>' +
+        scoreBreakdown +
         '<div class="dim-detail-desc">' + escapeHtml(t(d.description)) + '</div>' +
         '<div class="dim-detail-reasoning">' + escapeHtml(t(d.reasoning)) + '</div>' +
         (d.evidence && d.evidence.length
@@ -988,6 +1220,78 @@
           : '');
       grid.appendChild(card);
     });
+  }
+
+  function renderSessions(report) {
+    const incidents = report.incidents || [];
+    const episodes = report.episodes || [];
+    const atoms = report.evidenceAtoms || [];
+    const zh = lang === 'zh';
+
+    const incidentIcons = {
+      command_retry_churn: '🔁', correction: '🧭', aborted_turns: '✋', context_pressure: '🗜'
+    };
+    const iDiv = document.getElementById('incidents');
+    if (incidents.length) {
+      iDiv.innerHTML = '<div class="card-label" style="margin-bottom:8px"><span class="label-dot"></span>' + tc('incidentsTitle') + '</div>' +
+        incidents.map(inc =>
+          '<div class="incident"><span class="incident-icon">' + (incidentIcons[inc.type] || '•') + '</span>' +
+          '<span>' + escapeHtml(inc.summary) +
+          ((inc.evidenceRefs || []).length ? '<span class="evidence-refs">' + inc.evidenceRefs.map(r => '<span class="evidence-ref" data-ref="' + escapeHtml(r) + '">' + escapeHtml(r) + '</span>').join('') + '</span>' : '') +
+          '</span></div>'
+        ).join('');
+    } else {
+      iDiv.innerHTML = '';
+    }
+
+    const eDiv = document.getElementById('episodes');
+    if (episodes.length) {
+      const rows = episodes.slice().reverse().map(ep => {
+        const statBits = [];
+        if (ep.durationMinutes != null) statBits.push(ep.durationMinutes + ' ' + tc('minutes'));
+        statBits.push(ep.edits + ' ' + tc('edits'));
+        const proofTotal = (ep.proofPassed || 0) + (ep.proofFailed || 0) + (ep.proofUnknown || 0);
+        if (proofTotal) statBits.push(proofTotal + ' ' + tc('proof'));
+        if (ep.failedCommands) statBits.push('<span class="episode-flag">' + ep.failedCommands + ' ' + tc('failedCmd') + '</span>');
+        if (ep.aborts) statBits.push('<span class="episode-flag">' + ep.aborts + ' abort</span>');
+        const planLine = ep.planCompletion && ep.planCompletion.total
+          ? '<div class="msg"><div class="msg-label">PLAN</div>' + ep.planCompletion.completed + ' / ' + ep.planCompletion.total + (zh ? ' 步完成' : ' steps completed') + '</div>'
+          : '';
+        return '<details class="episode">' +
+          '<summary>' +
+            '<span class="episode-kind" data-kind="' + escapeHtml(ep.kind || 'interactive') + '">' + escapeHtml(ep.kind || 'interactive') + '</span>' +
+            '<span>' + escapeHtml(ep.threadName || (ep.startedAt ? formatDate(ep.startedAt) : ep.sessionId || '')) + '</span>' +
+            '<span class="episode-stats">' + statBits.join(' · ') + '</span>' +
+          '</summary>' +
+          '<div class="episode-body">' +
+            (ep.firstUserMessage ? '<div class="msg"><div class="msg-label">' + (zh ? '开场' : 'OPENING') + '</div>' + escapeHtml(ep.firstUserMessage) + '</div>' : '') +
+            (ep.lastAgentMessage ? '<div class="msg"><div class="msg-label">' + (zh ? '收尾' : 'CLOSING') + '</div>' + escapeHtml(ep.lastAgentMessage) + '</div>' : '') +
+            planLine +
+          '</div>' +
+        '</details>';
+      });
+      eDiv.innerHTML = '<div class="card-label" style="margin:14px 0 8px"><span class="label-dot"></span>' + tc('episodesTitle') + '</div>' + rows.join('');
+    } else {
+      eDiv.innerHTML = '';
+    }
+
+    const aDiv = document.getElementById('atoms');
+    if (atoms.length) {
+      aDiv.innerHTML = '<div class="card-label" style="margin:14px 0 8px"><span class="label-dot"></span>' + tc('atomsTitle') + '</div>' +
+        atoms.map(a => {
+          const after = a.after
+            ? '<div class="atom-after">→ ' + (a.after.toolCalls || 0) + ' tools · ' + (a.after.edits || 0) + ' edits' +
+              ((a.after.failedCommands || 0) ? ' · <span class="episode-flag">' + a.after.failedCommands + ' failed</span>' : '') +
+              ((a.after.proofRuns || 0) ? ' · ' + a.after.proofRuns + ' proof' : '') + '</div>'
+            : '';
+          return '<div class="atom" id="atom-' + escapeHtml(a.id) + '">' +
+            '<span class="atom-id">' + escapeHtml(a.id) + '</span>' +
+            '<span>' + escapeHtml(a.snippet) + '</span>' + after +
+          '</div>';
+        }).join('');
+    } else {
+      aDiv.innerHTML = '';
+    }
   }
 
   function renderToolcraft(report) {
@@ -1034,9 +1338,59 @@
         '<div class="stat-pill"><span>' + (lang === 'zh' ? '网页搜索' : 'Web search') + '</span><span class="stat-num">' + (tc_d.webSearchCalls || 0) + '</span></div>' +
         '<div class="stat-pill"><span>MCP</span><span class="stat-num">' + (tc_d.mcpCalls || 0) + '</span></div>' +
         '<div class="stat-pill"><span>' + (lang === 'zh' ? '图像' : 'Image') + '</span><span class="stat-num">' + (tc_d.imageCalls || 0) + '</span></div>' +
-        '<div class="stat-pill"><span>' + (lang === 'zh' ? '看图' : 'View image') + '</span><span class="stat-num">' + (tc_d.browserCalls || 0) + '</span></div>' +
+        '<div class="stat-pill"><span>' + (lang === 'zh' ? '看图' : 'View image') + '</span><span class="stat-num">' + (tc_d.viewImageCalls != null ? tc_d.viewImageCalls : (tc_d.browserCalls || 0)) + '</span></div>' +
       '</div>';
     grid.insertAdjacentHTML('beforeend', block('Research & MCP', '搜索与 MCP', researchHtml));
+
+    // ── Modern platform blocks ──
+    const mt = report.modernTools || {};
+
+    const mcpServers = Object.entries(mt.mcpByServer || {});
+    if (mcpServers.length) {
+      const rowsHtml = mcpServers.map(([server, info]) =>
+        '<div class="mcp-row"><span>' + escapeHtml(server) +
+          ' <span style="color:var(--text-5);font-size:11px">' + (info.tools || []).slice(0, 3).map(x => escapeHtml(x.name)).join(', ') + '</span></span>' +
+          '<span>' + info.calls + (info.errors ? ' <span class="err">(' + info.errors + ' err)</span>' : '') + '</span></div>'
+      ).join('');
+      grid.insertAdjacentHTML('beforeend', block('MCP servers', 'MCP 服务器', rowsHtml));
+    }
+
+    const lifecycle = mt.subagentLifecycle;
+    const subAct = report.subagentActivity;
+    if ((lifecycle && lifecycle.spawned) || (subAct && subAct.sessionCount)) {
+      let orcHtml = '<div class="stat-grid">';
+      if (lifecycle) {
+        orcHtml +=
+          '<div class="stat-pill"><span>' + (lang === 'zh' ? '派生' : 'Spawned') + '</span><span class="stat-num">' + (lifecycle.spawned || 0) + '</span></div>' +
+          '<div class="stat-pill"><span>' + (lang === 'zh' ? '等待' : 'Waited') + '</span><span class="stat-num">' + (lifecycle.waited || 0) + '</span></div>' +
+          '<div class="stat-pill"><span>' + (lang === 'zh' ? '关闭' : 'Closed') + '</span><span class="stat-num">' + (lifecycle.closed || 0) + '</span></div>' +
+          '<div class="stat-pill"><span>' + (lang === 'zh' ? '未回收' : 'Orphaned') + '</span><span class="stat-num"' + ((lifecycle.orphanedEstimate || 0) > 0 ? ' style="color:#ef4444"' : '') + '>' + (lifecycle.orphanedEstimate || 0) + '</span></div>';
+      }
+      orcHtml += '</div>';
+      if (subAct && subAct.sessionCount) {
+        orcHtml += '<div style="margin-top:10px;font-size:11px;color:var(--text-4);line-height:1.6">' +
+          subAct.sessionCount + ' ' + tc('subagentNote') +
+          (Object.keys(subAct.byRole || {}).length ? ' · ' + Object.entries(subAct.byRole).map(([role, count]) => escapeHtml(role) + '×' + count).join(' · ') : '') +
+          '</div>';
+      }
+      grid.insertAdjacentHTML('beforeend', block('Orchestration', '多代理编排', orcHtml));
+    }
+
+    const plans = mt.plans || {};
+    const goals = mt.goals || {};
+    const hygiene = mt.contextHygiene || {};
+    const workflowHtml =
+      '<div class="stat-grid">' +
+        '<div class="stat-pill"><span>' + (lang === 'zh' ? 'Plan 完成度' : 'Plan completion') + '</span><span class="stat-num">' + (plans.planCompletionAvg != null ? Math.round(plans.planCompletionAvg * 100) + '%' : '–') + '</span></div>' +
+        '<div class="stat-pill"><span>Goals</span><span class="stat-num">' + ((goals.goalToolCalls || 0) + (goals.threadGoalEvents || 0)) + '</span></div>' +
+        '<div class="stat-pill"><span>' + (lang === 'zh' ? '上下文压缩' : 'Compactions') + '</span><span class="stat-num">' + (hygiene.compactions || 0) + '</span></div>' +
+        '<div class="stat-pill"><span>' + (lang === 'zh' ? '上下文峰值' : 'Peak context') + '</span><span class="stat-num">' + (hygiene.maxContextUsedPct ? Math.round(hygiene.maxContextUsedPct * 100) + '%' : '–') + '</span></div>' +
+      '</div>' +
+      ((mt.skillReads || []).length
+        ? '<div style="margin-top:10px;font-size:11px;color:var(--text-4);line-height:1.6">' + (lang === 'zh' ? 'Skills：' : 'Skills: ') +
+          mt.skillReads.map(x => escapeHtml(x.name) + '×' + x.count).join(' · ') + '</div>'
+        : '');
+    grid.insertAdjacentHTML('beforeend', block('Workflow & context', '工作流与上下文', workflowHtml));
 
     // Project assets block
     const assetItems = [

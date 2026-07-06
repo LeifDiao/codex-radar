@@ -72,12 +72,14 @@ export function parseJsonLine(line) {
     const payloadType = line.match(/"payload":\{"type":"([^"]+)"/)?.[1];
     const timestamp = line.match(/"timestamp":"([^"]+)"/)?.[1];
     const callId = line.match(/"call_id":"([^"]+)"/)?.[1] || line.match(/"id":"([^"]+)"/)?.[1];
+    const name = line.match(/"name":"([^"]+)"/)?.[1];
     return {
       timestamp,
       type: topType,
       payload: {
         type: payloadType,
         call_id: callId,
+        name,
         oversized: true
       }
     };
@@ -103,6 +105,60 @@ export async function readSessionMeta(filePath) {
 }
 
 class StopReading extends Error {}
+
+// ---------------------------------------------------------------------------
+// Incremental session_meta cache. Reading the first line of 10k+ JSONL files
+// on every run is the dominant cost of listing projects — cache the slim meta
+// keyed by (mtimeMs, size) and only re-read files that changed.
+// ---------------------------------------------------------------------------
+
+const META_CACHE_PATH = () => path.join(RADAR_HOME, "cache", "session-meta.json");
+
+function slimMeta(meta) {
+  if (!meta) return null;
+  return {
+    id: meta.id || meta.session_id || null,
+    cwd: meta.cwd || null,
+    timestamp: meta.timestamp || null,
+    source: typeof meta.source === "string" ? meta.source : (meta.source ? { subagent: true } : null),
+    thread_source: meta.thread_source || null,
+    originator: meta.originator || null,
+    model_provider: meta.model_provider || null
+  };
+}
+
+export async function loadSessionMetasCached(files) {
+  let cache = {};
+  try {
+    const parsed = JSON.parse(fs.readFileSync(META_CACHE_PATH(), "utf8"));
+    if (parsed?.schemaVersion === "meta-cache-1") cache = parsed.entries || {};
+  } catch { /* cold cache */ }
+
+  const result = new Map();
+  const nextCache = {};
+  let dirty = false;
+  for (const file of files) {
+    const stat = statSafe(file);
+    if (!stat) continue;
+    const cached = cache[file];
+    if (cached && cached.mtimeMs === stat.mtimeMs && cached.size === stat.size) {
+      nextCache[file] = cached;
+      if (cached.meta) result.set(file, cached.meta);
+      continue;
+    }
+    const meta = slimMeta(await readSessionMeta(file));
+    nextCache[file] = { mtimeMs: stat.mtimeMs, size: stat.size, meta };
+    if (meta) result.set(file, meta);
+    dirty = true;
+  }
+  if (dirty || Object.keys(cache).length !== Object.keys(nextCache).length) {
+    try {
+      ensureDir(path.dirname(META_CACHE_PATH()));
+      fs.writeFileSync(META_CACHE_PATH(), JSON.stringify({ schemaVersion: "meta-cache-1", entries: nextCache }));
+    } catch { /* cache write failure is non-fatal */ }
+  }
+  return result;
+}
 
 export function loadThreadIndex() {
   const indexPath = path.join(CODEX_HOME, "session_index.jsonl");

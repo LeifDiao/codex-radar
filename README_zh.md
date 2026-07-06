@@ -10,15 +10,17 @@
 
 ## 核心特性
 
-**🎯 评估你真实的 Codex 会话记录，不靠人工题库。** Codex Radar 直接解析 Codex 已经写好的 JSONL —— 你发的每条 prompt、每条 shell 命令和它的退出码、每次 `apply_patch` 编辑、每次 plan 更新，以及 MCP / 搜索 / 图像 / 子代理调用。分数反映你真实的工作方式，而不是你怎么答题。
+**🎯 评估你真实的 Codex 会话记录，不靠人工题库。** Codex Radar 直接解析 Codex 已经写好的 JSONL —— 兼容新旧两代落盘格式：每条 prompt、每条 shell 命令和它的退出码、每次 `apply_patch` 编辑、每次 plan 更新，以及 MCP / 搜索 / 子代理调用。子代理线程会被剔除（那些"用户消息"是 agent 写的），`codex exec` 批量运行按自动化画像评判，不会冒充你的对话水平。
 
-**💬 你的 Codex 亲自给你写诊断，而不只是给分数。** 确定性解析器先提取事实；再由你自己的 Codex 模型对照公开 rubric 打分 —— 公式基线 + 有界、引用证据的 ±15 微调 —— 并写出一段自由格式的协作诊断。每条结论都指向你的真实消息。
+**💬 你的 Codex 亲自给你写诊断，而不只是给分数。** 确定性解析器提取事实，并**用代码算出全部公式基线**——天然可复现。你的 Codex 模型只做按数据置信度封顶的证据微调（±5/±10/±15），并写出自由格式的协作诊断。每条结论都引用一个带 id、可点击下钻的证据原子。
 
-**📋 每条建议都是可粘贴 prompt。** 不讲"要多思考"这种空话。每条改进建议都附一段可以直接复制到下一个 thread 的具体话术，并标注它能提升哪个维度、预期影响多大。
+**📋 建议是类型化干预，不是空话。** 话术改写、工作流 playbook、可直接落盘的 setup 文件（包括自动生成的 `AGENTS.md` 草稿）、工具接入方案、完成定义仪式 —— 每条都基于引用的证据，每条都带一个 `verifyBy` 指标，下次报告可以核对它有没有生效。
 
-**⚖️ 按项目类型公平加权。** 3 条消息修完的 bug 不会和 50 个 session 的功能开发用同一把尺子。Codex Radar 自动归类（一次性 / 功能开发 / 长期 / 学习），按类别套用不同权重。当某个信号确实无法评估时 —— 比如项目目录在本机已经找不到，Architecture 维度会标记为 **N/A**，绝不假装给一个 50 分。
+**⚖️ 按项目类型公平加权。** 3 条消息修完的 bug、50 个 session 的功能开发、200 次运行的生图流水线，不会用同一把尺子。Codex Radar 自动归类（一次性 / 功能开发 / 长期 / 学习 / **自动化**），按类别套用不同权重。当某个信号确实无法评估时，维度标记为 **N/A**，绝不假装给一个 50 分。
 
-**🛠 专门评估你怎么用平台，不只是怎么说话。** 工程力类目读取 shell 命令成功率、补丁、plan 更新、MCP 服务、网页搜索、图像工具、子代理调用。Architecture 奖励持久化的工程设置 —— `AGENTS.md`、仓库脚手架、测试、依赖清单 —— 这些都是大多数用户没用足的杠杆。
+**🛠 专门评估你怎么用平台，不只是怎么说话。** 命令成功率、plan 步骤完成度、MCP 按服务器统计与错误率、子代理编排闭环（spawn 了几个、真正 close 了几个）、网页研究、skills、上下文卫生。验证必须是真正跑过的 —— `echo 验证` 不算，而跑挂了但你做出反应的测试有加分。
+
+**📈 每次运行都记得上一次。** 报告在本地留档 —— 第二次运行起显示分数趋势和各维度 delta（"较上次：验证意识 +9"），和每条建议的 `verifyBy` 形成闭环。
 
 **🔒 全本地，零数据上传。** 只读访问 `~/.codex/sessions`，无 API key、无云端、不发任何网络请求。报告是经过转义的单文件 HTML，写到 `~/.codex-radar/reports/`。
 
@@ -48,11 +50,13 @@
 | **工程力** | Toolcraft 工具调度 · Architecture 工程脚手架 · Tempo 推进节奏 |
 | **成效** | Efficiency 产出效率 · Proof Check 验证意识 · Completion 闭环完成 |
 
-**诊断** —— 你最强的信号、最主要的瓶颈、一段协作概述，以及一段跨类别的模式解读 —— 全部由你自己的会话计算得出，每个维度都内嵌可见的证据。
+**诊断** —— 你最强的信号、最主要的瓶颈、一段协作概述，以及一段跨类别的模式解读 —— 全部由你自己的会话计算得出，每条论断都带可点击的证据引用。
 
-**改进 prompt** —— 一组按优先级排序、可直接粘贴的改写 prompt（最多 7 条），针对每个有明显提升空间的维度各给一条，并标注预期分数影响。
+**改进方案** —— 5-7 条类型化建议（话术改写 / 工作流 playbook / setup 文件 / 工具接入 / 验证仪式），每条附引用证据、复制按钮和 `verifyBy` 指标；项目缺 AGENTS.md 时还会附一份由会话史生成的草稿。
 
-**信号与指标** —— 高频工具、工具类别、项目资产（`AGENTS.md`、`.git`、测试、依赖清单）、命令成功率、上下文压缩次数，以及一张「关键消息」表，标出每条消息里被识别出的信号。
+**会话轨迹** —— 卡壳点（命令重试空转、纠偏、被中断的回合）、近期会话下钻（时长、开场诉求、收尾消息、验证运行），以及被引用的证据原子。
+
+**信号与指标** —— 工具类别、MCP 按服务器统计、子代理编排闭环、plan 完成度、skills、上下文卫生、项目资产、命令成功率 —— 第二次运行起还有分数趋势和各维度 delta。
 
 ---
 
@@ -123,11 +127,11 @@ Run Codex Radar on this project
 
 ## 评分原理
 
-**两层架构，与 [Claude Radar](https://github.com/LeifDiao/claude-radar) 一致：**
+**三层架构，与 [Claude Radar](https://github.com/LeifDiao/claude-radar) 一致：**
 
-1. **事实** —— `parse-codex-project.mjs` 读取匹配的会话文件，提取可计数的信号（消息模式、工具类别、命令退出码、补丁事件、验证命令、项目资产）。确定性：同一输入 → 同一份事实。
-2. **评分 + 诊断** —— 由你自己的 Codex 模型读取这些事实和 `data/rubric.json`，计算每个维度的公式基线，加上有界的 ±15 证据微调，再写出自由格式的诊断和可粘贴 prompt。rubric 是公开的评分章程。
-3. **渲染** —— `render-report.mjs` 把报告 JSON 转成一个自包含的单文件 HTML。
+1. **事实 + 基线** —— `parse-codex-project.mjs` 给会话分类（交互式 / 自动化 / 子代理），跨两代落盘格式按 `call_id` 把工具调用与输出 join 起来，提取可计数信号和一层可按 id 引用的证据（原子 / 会话叙事 / 关键事件），并**用代码算出全部 9 个公式基线**。确定性：同一输入 → 同一份事实、同一组基线。
+2. **微调 + 诊断** —— 你的 Codex 模型读取事实和 `data/rubric.json`，对每个维度做按置信度封顶的有界微调，写出有据可查的观察清单、诊断，以及按各维度配方实例化的类型化建议。
+3. **渲染** —— `render-report.mjs` 校验 report schema，追加本地历史，注入趋势与 delta，产出自包含的单文件 HTML。
 
 分析跑在你自己的 Codex 会话里 —— 插件本身不发任何网络请求，也不需要额外的 API key。
 
@@ -139,11 +143,11 @@ Run Codex Radar on this project
 
 所有评分输入都在 [`plugins/codex-radar/data/rubric.json`](./plugins/codex-radar/data/rubric.json)：
 
-- 9 个维度的定义（中英）和所属类别
-- 4 种项目画像 + 各自的类别权重表
-- 等级阈值（S / A / B / C / D）
+- 9 个维度的定义（中英）、微调指南、按维度的建议配方
+- 5 种项目画像（含 `automation` 自动化）+ 各自的类别权重表
+- 按置信度封顶的微调上限 + 等级阈值（S / A / B / C / D）
 
-想让评分更贴合团队习惯？改这个文件，以及 `parse-codex-project.mjs` 里的维度公式 —— 解析器每次跑都会重新读取 rubric。
+想让评分更贴合团队习惯？改 rubric 和 `parse-codex-project.mjs` 里的可执行公式，然后跑 `node --test tests/*.test.mjs` —— fixture 测试套件会在两代 Codex 落盘格式上给你兜底。
 
 ---
 
@@ -154,20 +158,25 @@ Run Codex Radar on this project
 ```text
 codex-radar/
 ├── .agents/plugins/marketplace.json      # Codex marketplace 清单
+├── .github/workflows/test.yml            # CI：语法检查 + fixture 测试
 ├── docs/
 │   ├── index.html                        # GitHub Pages 落地页
 │   ├── METHODOLOGY.md / METHODOLOGY_zh.md # 评分规范（中英）
+├── tests/                                # fixture 回归测试套件（node --test）
 └── plugins/
     └── codex-radar/
         ├── .codex-plugin/plugin.json      # 插件清单
-        ├── data/rubric.json               # 9 维定义 + 画像权重
+        ├── data/rubric.json               # 9 维定义、建议配方、画像权重
+        ├── viewer/template.html           # 单文件 dashboard 外壳
         └── skills/analyze/
-            ├── SKILL.md                    # 编排：检测 → 解析 → 渲染
+            ├── SKILL.md                    # 编排：检测 → 解析 → 微调 → 渲染
             └── scripts/
-                ├── lib.mjs                 # 共享的 Codex 会话工具函数
-                ├── list-codex-projects.mjs # 扫描 ~/.codex/sessions + cwd 匹配
-                ├── parse-codex-project.mjs # 信号提取 + 确定性评分
-                └── render-report.mjs       # 报告 JSON → 单文件 HTML
+                ├── lib.mjs                 # 共享工具 + 增量 meta 缓存
+                ├── signals.mjs             # 消息分类器、proof/退出码提取
+                ├── list-codex-projects.mjs # 项目列表：类型构成 + 噪声折叠
+                ├── compute-baseline.mjs    # 你的会话指标分布（自我基准，缓存）
+                ├── parse-codex-project.mjs # 事实 + 证据 + 代码计算的基线
+                └── render-report.mjs       # 校验 → 历史/delta → 单文件 HTML
 ```
 
 零运行时依赖。

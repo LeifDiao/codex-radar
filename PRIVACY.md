@@ -13,10 +13,13 @@ The plugin reads local Codex history and project metadata:
 
 ## Data Written
 
-The plugin writes local reports:
+The plugin writes local reports and local caches:
 
-- `~/.codex-radar/temp/*.json`
-- `~/.codex-radar/reports/*.html`
+- `~/.codex-radar/temp/*.json` — facts and report JSON for the current run
+- `~/.codex-radar/reports/*.html` — the rendered dashboards
+- `~/.codex-radar/history.jsonl` — one summary line per report run (project name, scores; no message content) so later reports can show trends
+- `~/.codex-radar/cache/session-meta.json` — per-file session metadata (cwd, id, source; no message content) so project listing stays fast
+- `~/.codex-radar/cache/self-baseline.json` — aggregate per-session metric distributions (counts and ratios only; no message content)
 
 ## Network
 

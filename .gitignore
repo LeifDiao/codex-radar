@@ -144,3 +144,6 @@ vite.config.ts.timestamp-*
 
 # macOS
 .DS_Store
+
+# macOS folder icon artifacts
+Icon?
