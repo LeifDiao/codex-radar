@@ -6,6 +6,8 @@
 
 > **中文简介：** 一款 Codex 插件，读取你本地的 Codex 会话记录，从「沟通力 / 工程力 / 成效」三个层面、9 个维度评估你和 Codex 的协作质量。由你自己的 Codex 模型对照公开 rubric 打分并撰写诊断，输出一组可直接粘贴的改写 prompt 和一个专业可读的单文件 HTML dashboard。全程本地。完整中文文档 → [README_zh.md](./README_zh.md)
 
+<img width="1930" height="956" alt="Screenshot 2026-07-08 at 10 25 24 AM" src="https://github.com/user-attachments/assets/92e7af39-7c07-4847-a541-c5ed73e0301e" />
+
 ---
 
 ## Key features
