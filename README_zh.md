@@ -6,6 +6,9 @@
 
 > **English summary:** A Codex plugin that reads your local Codex session history and grades how well you collaborate with the agent across 9 dimensions in 3 categories. Your own Codex model scores the sessions against a transparent rubric and writes a free-form diagnosis, plus paste-ready improvement prompts and a professional single-file HTML dashboard. 100% local. Full English docs → [README.md](./README.md)
 
+
+<img alt="Codex Radar dashboard — 结论区：九维雷达图与重点评价" src="./docs/assets/dashboard-preview.png" />
+
 ---
 
 ## 核心特性
