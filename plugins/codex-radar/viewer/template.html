@@ -796,7 +796,7 @@
     const dims = report.dimensions || [];
     const n = dims.length;
     if (!n) { document.getElementById('heroRadar').innerHTML = ''; return; }
-    const W = 320, H = 300, cx = W / 2, cy = H / 2 + 4, R = 100;
+    const W = 400, H = 300, cx = W / 2, cy = H / 2 + 4, R = 100;
     const ang = i => -Math.PI / 2 + i * 2 * Math.PI / n;
     const px = (i, r) => cx + r * Math.cos(ang(i));
     const py = (i, r) => cy + r * Math.sin(ang(i));
