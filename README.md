@@ -1,3 +1,4 @@
+
 # Codex Radar
 
 > **A Codex plugin that reads your local Codex session history and grades how well you collaborate with the agent.** 9 dimensions across 3 categories — Communication, Engineering, Outcome. Your own Codex model scores the sessions against a transparent rubric and writes a free-form diagnosis, plus paste-ready improvement prompts — all in a professional, readable single-file HTML dashboard. 100% local.
@@ -6,7 +7,7 @@
 
 > **中文简介：** 一款 Codex 插件，读取你本地的 Codex 会话记录，从「沟通力 / 工程力 / 成效」三个层面、9 个维度评估你和 Codex 的协作质量。由你自己的 Codex 模型对照公开 rubric 打分并撰写诊断，输出一组可直接粘贴的改写 prompt 和一个专业可读的单文件 HTML dashboard。全程本地。完整中文文档 → [README_zh.md](./README_zh.md)
 
-<img alt="Codex Radar dashboard — verdict hero with 9-dimension radar chart and key reads" src="./docs/assets/dashboard-preview.png" />
+<img width="1466" height="1088" alt="Screenshot 2026-07-10 at 10 51 27 AM" src="https://github.com/user-attachments/assets/41cc593c-e546-4222-829f-c96fe87960a8" />
 
 ---
 
