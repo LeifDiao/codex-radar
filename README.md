@@ -41,11 +41,15 @@
 
 ## What the report includes
 
-Ask Codex to run the plugin and you get a single-file, professional, readable HTML dashboard:
+Ask Codex to run the plugin and you get a single-file HTML dashboard laid out like a coaching report — verdict first, evidence one click away:
 
-**Overall grade** — S through D, paired with your project profile so you know what scale you're being judged on.
+**Verdict** — your S–D grade with a one-line insight, the project profile you're being judged on, a real 9-dimension radar chart, and (from the second run) the score trend.
 
-**Three category scorecards** — each scoring 0-100 with its 3 dimensions:
+**Key Reads** — the core diagnosis as a pull-quote, plus two headline cards: your **strongest signal** and your **main bottleneck**, each pinned to a dimension and clickable through to its scoring rationale. The full collaboration profile and the cross-category pattern read sit one fold below.
+
+**Action Plan** — the one suggestion to act on first is spotlighted with its cited evidence, a copy-ready prompt, and a `verifyBy` metric your next report can check; the remaining typed suggestions (prompt rewrites, workflow playbooks, setup files, tool adoptions, verification rituals) collapse to one-line rows — plus a generated `AGENTS.md` draft when your project lacks one.
+
+**Scorecard** — three category blocks, each scoring 0-100 with its 3 dimensions:
 
 | Category | Dimensions |
 | --- | --- |
@@ -53,13 +57,9 @@ Ask Codex to run the plugin and you get a single-file, professional, readable HT
 | **Engineering** | Toolcraft 工具调度 · Architecture 工程脚手架 · Tempo 推进节奏 |
 | **Outcome** | Efficiency 产出效率 · Proof Check 验证意识 · Completion 闭环完成 |
 
-**Diagnosis** — your strongest signal, your main bottleneck, a collaboration summary, and a cross-category pattern read — all computed from your own sessions, every claim citing clickable evidence.
+Every dimension row expands into its formula baseline, the bounded evidence-cited adjustment, the reasoning, and per-dimension deltas since the last run.
 
-**Improvement plan** — 5-7 typed suggestions (prompt rewrites, workflow playbooks, setup files, tool adoptions, verification rituals), each with cited evidence, a copy button, and a `verifyBy` metric — plus a generated `AGENTS.md` draft when your project lacks one.
-
-**Session trails** — friction points (retry churn, corrections, aborted turns), a drill-down of recent sessions (duration, opening ask, closing message, proof runs), and the cited evidence atoms.
-
-**Signals & metrics** — tool categories, per-server MCP usage, subagent orchestration lifecycle, plan completion, skills, context hygiene, project assets, command success rate — and from the second run, a score trend with per-dimension deltas.
+**Appendix** — collapsed by default: friction points (retry churn, corrections, aborted turns), a drill-down of recent sessions, the cited evidence atoms, and platform metrics — tool categories, per-server MCP usage, subagent orchestration lifecycle, plan completion, context hygiene, project assets, command success rate.
 
 ---
 

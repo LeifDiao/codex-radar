@@ -1,6 +1,6 @@
 [中文版](./METHODOLOGY_zh.md)
 
-# Codex Radar — Methodology (v2.1)
+# Codex Radar — Methodology (v2.2)
 
 > Codex Radar is not focused on code output. It focuses on *how you collaborate with Codex as a platform* — your communication, your engineering setup, and your actual outcomes.
 >
@@ -216,7 +216,9 @@ Suggestion generation is two-pass:
 | `tool_adoption` | how to wire an unused capability + its first concrete use |
 | `verification_loop` | a definition-of-done clause |
 
-Every suggestion carries `evidenceRefs`, a `verifyBy` (which facts metric should move on the next run), and must survive the **anti-generic rule**: if it still makes sense after deleting every project-specific noun, it gets rewritten.
+Every suggestion carries `evidenceRefs`, a one-line `summary` (shown on its collapsed row in the dashboard), a `verifyBy` (which facts metric should move on the next run), and must survive the **anti-generic rule**: if it still makes sense after deleting every project-specific noun, it gets rewritten. Suggestions are sorted high → medium → low, and the dashboard spotlights the first one as "do this first."
+
+The diagnosis layer also emits **`highlights`** — a strongest-signal card and a main-bottleneck card, each pinned to a dimension with a one-sentence evidence-bearing headline. The model picks the dimension that best carries the diagnosis; if the block is absent, the renderer falls back to the max/min dimension scores.
 
 When a project has ≥3 sessions, a resolvable directory, and no `AGENTS.md`, the report also includes a complete **AGENTS.md draft** generated from the observed commands, conventions, and pitfalls.
 

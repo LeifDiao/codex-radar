@@ -81,12 +81,15 @@ warnField(report.diagnosis?.collaborationProfile, 'diagnosis.collaborationProfil
 warnField(report.diagnosis?.coreDiagnosis, 'diagnosis.coreDiagnosis missing');
 warnField(report.insight, 'insight missing');
 warnField(report.profile?.type, 'profile.type missing');
+warnField(report.highlights?.strength && report.highlights?.bottleneck,
+  'highlights.strength/bottleneck missing — dashboard falls back to max/min dimension score');
 if (Array.isArray(report.suggestions)) {
   for (const [i, s] of report.suggestions.entries()) {
     warnField(s.title && s.body, `suggestion #${i + 1} missing title/body`);
     warnField(s.type, `suggestion #${i + 1} missing type`);
     warnField(s.verifyBy, `suggestion #${i + 1} missing verifyBy`);
   }
+  warnField(report.suggestions.every(s => s.summary), 'some suggestions missing summary — collapsed rows fall back to the first sentence of body');
 }
 
 if (errors.length) {

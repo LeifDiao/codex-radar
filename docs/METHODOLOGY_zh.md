@@ -1,6 +1,6 @@
 [English](./METHODOLOGY.md)
 
-# Codex Radar — 方法论（v2.1）
+# Codex Radar — 方法论（v2.2）
 
 > Codex Radar 关注的不是代码产出，而是*你怎么把 Codex 当成一个平台来协作* —— 你的沟通、你的工程设置、你真实的成效。
 >
@@ -206,7 +206,9 @@
 | `tool_adoption` | 如何接入一个没用上的能力 + 第一个具体使用场景 |
 | `verification_loop` | 一条"完成定义"话术 |
 
-每条建议带 `evidenceRefs` 和 `verifyBy`（下次运行哪个指标应该动），并必须通过**反通用规则**：把项目专属名词全删掉后还成立的建议，重写。
+每条建议带 `evidenceRefs`、一句话 `summary`（显示在 dashboard 的折叠行上）和 `verifyBy`（下次运行哪个指标应该动），并必须通过**反通用规则**：把项目专属名词全删掉后还成立的建议，重写。建议按 high → medium → low 排序，dashboard 会把第一条聚焦展示为「先做这一件」。
+
+诊断层还会输出 **`highlights`** —— 一张最强信号卡和一张首要瓶颈卡，各钉在一个维度上，配一句带证据的 headline。由模型挑选最能承载诊断的维度；该块缺失时，渲染器回退到最高/最低分维度。
 
 当项目 ≥3 会话、目录可定位且没有 `AGENTS.md` 时，报告还会附一份由会话史生成的完整 **AGENTS.md 草稿**。
 

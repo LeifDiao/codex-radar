@@ -25,7 +25,7 @@ function sampleReport(overrides = {}) {
     evidence: ["a1: something concrete"]
   });
   return {
-    schemaVersion: "2.1",
+    schemaVersion: "2.2",
     project: "Fixture Project",
     projectCwd: "/tmp/fixture-project",
     generatedAt: "2026-07-06T12:00:00.000Z",
@@ -81,15 +81,19 @@ function sampleReport(overrides = {}) {
       coreDiagnosis: { en: "**Strength**: precise asks.", zh: "**强项**：指令精准。" },
       crossDimensionReading: { en: "x", zh: "组合解读" }
     },
+    highlights: {
+      strength: { dimensionId: "lock_on", headline: { en: "Sharp asks land first try.", zh: "指令一次命中。" } },
+      bottleneck: { dimensionId: "proof_check", headline: { en: "Ships without proof.", zh: "交付缺验证。" } }
+    },
     observations: [
       { text: { en: "obs", zh: "观察" }, dimensionId: "proof_check", evidenceRefs: ["a1"] }
     ],
     suggestions: [
-      { type: "verification_loop", dimensionId: "proof_check", priority: "high", title: { en: "Close with proof", zh: "带证据收工" }, body: { en: "b", zh: "正文" }, evidence: { en: "e", zh: "证据" }, evidenceRefs: ["a1"], promptRewrite: { en: "run npm test and paste", zh: "跑 npm test 并贴结果" }, steps: null, snippet: null, verifyBy: { en: "proofCommands.passed > 0", zh: "proofCommands.passed > 0" }, expectedImpact: { en: "+10 Proof", zh: "验证 +10" } },
-      { type: "setup_action", dimensionId: "architecture", priority: "medium", title: { en: "AGENTS.md", zh: "建 AGENTS.md" }, body: { en: "b", zh: "b" }, evidence: { en: "e", zh: "e" }, evidenceRefs: ["a1"], promptRewrite: null, steps: null, snippet: "# AGENTS.md\n\n- run: npm test", verifyBy: { en: "hasAgentsMd == true", zh: "hasAgentsMd == true" }, expectedImpact: { en: "+20 Arch", zh: "脚手架 +20" } },
-      { type: "workflow_habit", dimensionId: "tempo", priority: "medium", title: { en: "Stop retry loops", zh: "止住重试环" }, body: { en: "b", zh: "b" }, evidence: { en: "e", zh: "e" }, evidenceRefs: ["a1"], promptRewrite: null, steps: [{ en: "step 1", zh: "第一步" }, { en: "step 2", zh: "第二步" }], snippet: null, verifyBy: { en: "no churn incidents", zh: "无重试卡壳" }, expectedImpact: { en: "+8 Tempo", zh: "节奏 +8" } },
-      { type: "tool_adoption", dimensionId: "toolcraft", priority: "low", title: { en: "Close agents", zh: "回收子代理" }, body: { en: "b", zh: "b" }, evidence: { en: "e", zh: "e" }, evidenceRefs: ["a1"], promptRewrite: null, steps: [{ en: "s", zh: "s" }], snippet: null, verifyBy: { en: "orphanedEstimate == 0", zh: "orphanedEstimate == 0" }, expectedImpact: { en: "+5 Tools", zh: "工具 +5" } },
-      { type: "prompt_rewrite", dimensionId: "lock_on", priority: "low", title: { en: "Name the file", zh: "点名文件" }, body: { en: "b", zh: "b" }, evidence: { en: "e", zh: "e" }, evidenceRefs: ["a1"], promptRewrite: { en: "edit src/x.js: ...", zh: "改 src/x.js：..." }, steps: null, snippet: null, verifyBy: { en: "filePath ratio up", zh: "filePath 比例上升" }, expectedImpact: { en: "+5 Lock-On", zh: "瞄准 +5" } }
+      { type: "verification_loop", dimensionId: "proof_check", priority: "high", title: { en: "Close with proof", zh: "带证据收工" }, summary: { en: "End each task with a test run.", zh: "每个任务以测试收尾。" }, body: { en: "b", zh: "正文" }, evidence: { en: "e", zh: "证据" }, evidenceRefs: ["a1"], promptRewrite: { en: "run npm test and paste", zh: "跑 npm test 并贴结果" }, steps: null, snippet: null, verifyBy: { en: "proofCommands.passed > 0", zh: "proofCommands.passed > 0" }, expectedImpact: { en: "+10 Proof", zh: "验证 +10" } },
+      { type: "setup_action", dimensionId: "architecture", priority: "medium", title: { en: "AGENTS.md", zh: "建 AGENTS.md" }, summary: { en: "Persist project rules into AGENTS.md.", zh: "把项目规则沉淀进 AGENTS.md。" }, body: { en: "b", zh: "b" }, evidence: { en: "e", zh: "e" }, evidenceRefs: ["a1"], promptRewrite: null, steps: null, snippet: "# AGENTS.md\n\n- run: npm test", verifyBy: { en: "hasAgentsMd == true", zh: "hasAgentsMd == true" }, expectedImpact: { en: "+20 Arch", zh: "脚手架 +20" } },
+      { type: "workflow_habit", dimensionId: "tempo", priority: "medium", title: { en: "Stop retry loops", zh: "止住重试环" }, summary: { en: "Break out of blind retries after two failures.", zh: "连败两次就换路，不盲试。" }, body: { en: "b", zh: "b" }, evidence: { en: "e", zh: "e" }, evidenceRefs: ["a1"], promptRewrite: null, steps: [{ en: "step 1", zh: "第一步" }, { en: "step 2", zh: "第二步" }], snippet: null, verifyBy: { en: "no churn incidents", zh: "无重试卡壳" }, expectedImpact: { en: "+8 Tempo", zh: "节奏 +8" } },
+      { type: "tool_adoption", dimensionId: "toolcraft", priority: "low", title: { en: "Close agents", zh: "回收子代理" }, summary: { en: "Close spawned subagents when done.", zh: "用完的子代理要关闭。" }, body: { en: "b", zh: "b" }, evidence: { en: "e", zh: "e" }, evidenceRefs: ["a1"], promptRewrite: null, steps: [{ en: "s", zh: "s" }], snippet: null, verifyBy: { en: "orphanedEstimate == 0", zh: "orphanedEstimate == 0" }, expectedImpact: { en: "+5 Tools", zh: "工具 +5" } },
+      { type: "prompt_rewrite", dimensionId: "lock_on", priority: "low", title: { en: "Name the file", zh: "点名文件" }, summary: { en: "Name the exact file in the ask.", zh: "指令里点名具体文件。" }, body: { en: "b", zh: "b" }, evidence: { en: "e", zh: "e" }, evidenceRefs: ["a1"], promptRewrite: { en: "edit src/x.js: ...", zh: "改 src/x.js：..." }, steps: null, snippet: null, verifyBy: { en: "filePath ratio up", zh: "filePath 比例上升" }, expectedImpact: { en: "+5 Lock-On", zh: "瞄准 +5" } }
     ],
     agentsMdDraft: "# AGENTS.md\n\n## Commands\n- npm test",
     ...overrides
@@ -106,7 +110,7 @@ function runRender(home, report) {
   return stdout.trim();
 }
 
-test("renders a valid 2.1 report to self-contained HTML", () => {
+test("renders a valid 2.2 report to self-contained HTML", () => {
   const home = makeTempHome("codex-radar-render-");
   const outPath = runRender(home, sampleReport());
   assert.ok(fs.existsSync(outPath));
@@ -115,6 +119,24 @@ test("renders a valid 2.1 report to self-contained HTML", () => {
   assert.ok(html.includes("verification_loop"), "typed suggestions embedded");
   assert.ok(html.includes("agentsMdDraft") || html.includes("AGENTS.md"), "draft embedded");
   assert.ok(!html.includes("{{REPORT_DATA}}"), "placeholder replaced");
+  assert.ok(html.includes('"highlights"'), "highlights block embedded");
+  assert.ok(html.includes("renderRadar"), "radar chart renderer present");
+  assert.ok(html.includes("focus-card"), "focus suggestion card present");
+});
+
+test("renders without highlights/summary (renderer derives them)", () => {
+  const home = makeTempHome("codex-radar-render-");
+  const report = sampleReport({ highlights: undefined });
+  report.suggestions = report.suggestions.map(({ summary, ...rest }) => rest);
+  const outPath = runRender(home, report);
+  const html = fs.readFileSync(outPath, "utf8");
+  assert.ok(html.includes("Fixture Project"));
+  const embedded = html.match(/<script id="report-data" type="application\/json">([\s\S]*?)<\/script>/)[1];
+  const embeddedReport = JSON.parse(embedded.replace(/<\\\/script/g, "</script"));
+  assert.ok(
+    embeddedReport.schemaWarnings.some(w => w.includes("highlights")),
+    "missing highlights surfaces as a schema warning"
+  );
 });
 
 test("rejects a structurally broken report with readable errors", () => {

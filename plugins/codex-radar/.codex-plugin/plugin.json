@@ -1,6 +1,6 @@
 {
   "name": "codex-radar",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "description": "Analyze your local Codex collaboration history across 9 dimensions in 3 categories (Communication / Engineering / Outcome): your Codex model scores the sessions and writes a diagnosis with paste-ready prompt rewrites, rendered as a single-file HTML dashboard. 100% local.",
   "author": {
     "name": "Leif Diao",

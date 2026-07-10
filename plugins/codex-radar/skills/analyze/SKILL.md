@@ -113,6 +113,13 @@ Per `rubric.diagnosis`, produce three bilingual pieces, each grounded in cited e
 
 Also write **`insight`** per `rubric.insight`: ONE vivid 60-110 char bilingual hero line. No raw scores, no category badges, no generic praise.
 
+Also write **`highlights`** — the two headline cards the dashboard shows right under the core diagnosis:
+
+- `highlights.strength` — `{dimensionId, headline: {en, zh}}` for the single strongest signal. The headline is ONE punchy evidence-bearing sentence (numbers welcome), not a restatement of the dimension name.
+- `highlights.bottleneck` — same shape, for the single most costly bottleneck.
+
+Pick the dimension that best carries the diagnosis, not mechanically the highest/lowest score (the renderer falls back to max/min score if you omit this block — your value-add is choosing better and writing a sharper headline).
+
 ## Step 8 — Observations, then suggestions (two passes)
 
 **8a. Observations (8-12).** Per `rubric.observations`: single-sentence, bilingual, each with `evidenceRefs` (atom/incident ids) and a `dimensionId`. These force you to look at the evidence before prescribing. Include them in the report.
@@ -121,15 +128,15 @@ Also write **`insight`** per `rubric.insight`: ONE vivid 60-110 char bilingual h
 
 1. **Recipes first** — walk every dimension's `suggestionRecipes`; for each trigger that fires against the facts, instantiate the recipe with this user's real files, commands, tools, and quoted fragments.
 2. Fill remaining slots from the strongest unaddressed observations (`highScorerFillSources` for strong users).
-3. Each suggestion: `type` (prompt_rewrite / workflow_habit / setup_action / tool_adoption / verification_loop), `dimensionId`, `priority`, bilingual `title` (<18 chars) / `body` (2-4 sentences: behavior → cost → change) / `evidence`, `evidenceRefs` (≥2 ids when available), the type's payload (`promptRewrite` / `steps[]` / `snippet`), `verifyBy` (which facts metric should move next run), `expectedImpact`.
+3. Each suggestion: `type` (prompt_rewrite / workflow_habit / setup_action / tool_adoption / verification_loop), `dimensionId`, `priority`, bilingual `title` (<18 chars) / `summary` (ONE sentence — shown on the collapsed row in the dashboard) / `body` (2-4 sentences: behavior → cost → change) / `evidence`, `evidenceRefs` (≥2 ids when available), the type's payload (`promptRewrite` / `steps[]` / `snippet`), `verifyBy` (which facts metric should move next run), `expectedImpact`.
 4. **Anti-generic rule**: if a suggestion still makes sense after deleting every project-specific noun, rewrite it. When facts support it, at least 2 suggestions must be non-prompt_rewrite types.
-5. Sort high → medium → low.
+5. Sort high → medium → low. The dashboard spotlights the FIRST suggestion as "do this first" and collapses the rest — make sure suggestion #1 is the one intervention you'd bet on.
 
 **8c. AGENTS.md draft (conditional).** If `projectAssets.cwdResolved && !projectAssets.hasAgentsMd && stats.sessions >= 3`, also write **`agentsMdDraft`** — a complete, project-specific AGENTS.md generated from the session history: observed commands, conventions, recurring pitfalls (from criticalIncidents), verification expectations. Concrete over generic; 30-60 lines; in `report.language` with English section headers.
 
 ---
 
-## Step 9 — Assemble report JSON 2.1 and write it
+## Step 9 — Assemble report JSON 2.2 and write it
 
 ```bash
 mkdir -p ~/.codex-radar/temp
@@ -139,7 +146,7 @@ Write to `~/.codex-radar/temp/codex-report.json`:
 
 ```jsonc
 {
-  "schemaVersion": "2.1",
+  "schemaVersion": "2.2",
   "project": "<facts.project.displayName>",
   "projectCwd": "<facts.project.cwd>",
   "generatedAt": "<ISO timestamp>",
@@ -181,6 +188,11 @@ Write to `~/.codex-radar/temp/codex-report.json`:
     "crossDimensionReading": {"en": "...", "zh": "..."}
   },
 
+  "highlights": {
+    "strength": { "dimensionId": "completion", "headline": {"en": "...", "zh": "..."} },
+    "bottleneck": { "dimensionId": "proof_check", "headline": {"en": "...", "zh": "..."} }
+  },
+
   "observations": [
     {"text": {"en": "...", "zh": "..."}, "dimensionId": "proof_check", "evidenceRefs": ["a3", "a17"]}
   ],
@@ -191,6 +203,7 @@ Write to `~/.codex-radar/temp/codex-report.json`:
       "dimensionId": "proof_check",
       "priority": "high",
       "title": {"en": "...", "zh": "..."},
+      "summary": {"en": "...", "zh": "..."},
       "body": {"en": "...", "zh": "..."},
       "evidence": {"en": "...", "zh": "..."},
       "evidenceRefs": ["a3", "i1"],
