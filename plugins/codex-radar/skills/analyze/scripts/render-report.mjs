@@ -7,8 +7,15 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { execSync } from 'node:child_process';
-import { RADAR_HOME } from './lib.mjs';
+import { execFileSync } from 'node:child_process';
+import {
+  appendFilePrivate,
+  ensurePrivateDir,
+  loadRubric,
+  RADAR_HOME,
+  writeFilePrivate
+} from './lib.mjs';
+import { validateFinalReport } from './report-contract.mjs';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -30,7 +37,9 @@ if (!fs.existsSync(reportJsonPath)) {
 // This script lives at: <plugin-root>/skills/analyze/scripts/render-report.mjs
 // Template lives at:    <plugin-root>/viewer/template.html
 const pluginRoot = path.resolve(__dirname, '..', '..', '..');
+const skillDir = path.resolve(__dirname, '..');
 const templatePath = path.join(pluginRoot, 'viewer', 'template.html');
+const rubric = loadRubric(skillDir);
 
 if (!fs.existsSync(templatePath)) {
   console.error(`Template not found: ${templatePath}`);
@@ -48,49 +57,7 @@ try {
   process.exit(1);
 }
 
-// ---------------------------------------------------------------------------
-// Schema validation — hard errors block the render with a readable list;
-// soft issues become schemaWarnings shown in the report banner.
-// ---------------------------------------------------------------------------
-
-const errors = [];
-const warnings = [];
-
-function requireField(condition, message) {
-  if (!condition) errors.push(message);
-}
-function warnField(condition, message) {
-  if (!condition) warnings.push(message);
-}
-
-requireField(typeof report.project === 'string' && report.project.length > 0, 'project (string) is required');
-requireField(report.language === 'zh' || report.language === 'en', "language must be exactly 'zh' or 'en'");
-requireField(typeof report.overallScore === 'number', 'overallScore (number) is required');
-requireField(typeof report.overallGrade === 'string', 'overallGrade (string) is required');
-requireField(report.categoryScores && typeof report.categoryScores === 'object', 'categoryScores (object) is required');
-requireField(Array.isArray(report.dimensions) && report.dimensions.length === 9, 'dimensions must be an array of exactly 9 entries');
-if (Array.isArray(report.dimensions)) {
-  for (const dim of report.dimensions) {
-    requireField(typeof dim?.id === 'string', 'every dimension needs an id');
-    requireField(dim?.applicable === false || typeof dim?.score === 'number', `dimension ${dim?.id}: score required when applicable`);
-  }
-}
-requireField(Array.isArray(report.suggestions) && report.suggestions.length >= 1, 'suggestions must contain at least 1 entry');
-warnField(report.suggestions?.length >= 5, 'fewer than 5 suggestions (rubric asks for 5-7)');
-warnField(report.diagnosis?.collaborationProfile, 'diagnosis.collaborationProfile missing');
-warnField(report.diagnosis?.coreDiagnosis, 'diagnosis.coreDiagnosis missing');
-warnField(report.insight, 'insight missing');
-warnField(report.profile?.type, 'profile.type missing');
-warnField(report.highlights?.strength && report.highlights?.bottleneck,
-  'highlights.strength/bottleneck missing — dashboard falls back to max/min dimension score');
-if (Array.isArray(report.suggestions)) {
-  for (const [i, s] of report.suggestions.entries()) {
-    warnField(s.title && s.body, `suggestion #${i + 1} missing title/body`);
-    warnField(s.type, `suggestion #${i + 1} missing type`);
-    warnField(s.verifyBy, `suggestion #${i + 1} missing verifyBy`);
-  }
-  warnField(report.suggestions.every(s => s.summary), 'some suggestions missing summary — collapsed rows fall back to the first sentence of body');
-}
+const { errors, warnings } = validateFinalReport(report, rubric);
 
 if (errors.length) {
   console.error('Report JSON failed validation:');
@@ -98,14 +65,13 @@ if (errors.length) {
   console.error(`\nFix these fields in ${reportJsonPath} and re-run.`);
   process.exit(1);
 }
-report.schemaWarnings = warnings;
+report.schemaWarnings = [...new Set(warnings)];
 
 // ---------------------------------------------------------------------------
 // History: previous runs of the same project → trend + delta
 // ---------------------------------------------------------------------------
 
 const historyPath = path.join(RADAR_HOME, 'history.jsonl');
-const projectKey = report.projectCwd || report.project;
 
 function loadHistory() {
   try {
@@ -113,7 +79,11 @@ function loadHistory() {
       .split('\n')
       .filter(Boolean)
       .map(line => { try { return JSON.parse(line); } catch { return null; } })
-      .filter(entry => entry && (entry.projectCwd || entry.project) === projectKey);
+      .filter(entry => {
+        if (!entry) return false;
+        if (report.projectCwd && entry.projectCwd) return entry.projectCwd === report.projectCwd;
+        return entry.project === report.project;
+      });
   } catch {
     return [];
   }
@@ -165,8 +135,8 @@ const html = template.replace('{{REPORT_DATA}}', safeJson);
 
 const reportsDir = path.join(RADAR_HOME, 'reports');
 const tempDir = path.join(RADAR_HOME, 'temp');
-fs.mkdirSync(reportsDir, { recursive: true });
-fs.mkdirSync(tempDir, { recursive: true });
+ensurePrivateDir(reportsDir);
+ensurePrivateDir(tempDir);
 
 function slugify(s) {
   return String(s || 'report')
@@ -179,21 +149,30 @@ function slugify(s) {
 function timestamp() {
   const d = new Date();
   const pad = n => String(n).padStart(2, '0');
+  const padMs = n => String(n).padStart(3, '0');
   return (
     d.getFullYear().toString() +
     pad(d.getMonth() + 1) +
     pad(d.getDate()) + '-' +
     pad(d.getHours()) +
     pad(d.getMinutes()) +
-    pad(d.getSeconds())
+    pad(d.getSeconds()) + '-' +
+    padMs(d.getMilliseconds())
   );
 }
 
 const slug = slugify(report.project);
-const outName = `${slug}-${timestamp()}.html`;
-const outPath = path.join(reportsDir, outName);
+const outBase = `${slug}-${timestamp()}`;
+let outName = `${outBase}.html`;
+let outPath = path.join(reportsDir, outName);
+let collision = 1;
+while (fs.existsSync(outPath)) {
+  outName = `${outBase}-${collision}.html`;
+  outPath = path.join(reportsDir, outName);
+  collision += 1;
+}
 
-fs.writeFileSync(outPath, html, 'utf-8');
+writeFilePrivate(outPath, html);
 
 // Append this run to history AFTER a successful write.
 try {
@@ -210,7 +189,7 @@ try {
     ),
     reportFile: outName
   };
-  fs.appendFileSync(historyPath, JSON.stringify(historyEntry) + '\n');
+  appendFilePrivate(historyPath, JSON.stringify(historyEntry) + '\n');
 } catch (e) {
   process.stderr.write(`[codex-radar] Could not append to history: ${e.message}\n`);
 }
@@ -218,14 +197,13 @@ try {
 // Open in browser (cross-platform)
 function openFile(filePath) {
   const p = process.platform;
-  const safe = filePath.replace(/"/g, '\\"');
   try {
     if (p === 'darwin') {
-      execSync(`open "${safe}"`, { stdio: 'ignore' });
+      execFileSync('open', [filePath], { stdio: 'ignore' });
     } else if (p === 'win32') {
-      execSync(`start "" "${safe}"`, { stdio: 'ignore', shell: true });
+      execFileSync(process.env.ComSpec || 'cmd.exe', ['/d', '/s', '/c', 'start', '', filePath], { stdio: 'ignore' });
     } else {
-      execSync(`xdg-open "${safe}"`, { stdio: 'ignore' });
+      execFileSync('xdg-open', [filePath], { stdio: 'ignore' });
     }
     return true;
   } catch {

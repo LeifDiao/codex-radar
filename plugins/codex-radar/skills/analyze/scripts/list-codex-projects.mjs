@@ -1,13 +1,11 @@
 #!/usr/bin/env node
 // list-codex-projects.mjs — group local Codex sessions into projects.
-// v2.1: incremental meta cache (fast on 10k+ session files), sessionKind
-// breakdown per project, and child-directory folding so batch-automation
-// subfolders don't drown the list.
+// Uses an incremental meta cache, folds automation-heavy child directories,
+// and returns only the recent selection fields needed by the skill.
 import os from "node:os";
 import path from "node:path";
 import {
   allSessionFiles,
-  CODEX_HOME,
   displayNameFromCwd,
   isSameOrChild,
   loadSessionMetasCached,
@@ -18,10 +16,18 @@ import {
 import { sessionKindFromMeta } from "./signals.mjs";
 
 function parseArgs(argv) {
-  const args = { cwd: process.cwd() };
+  const args = { cwd: process.cwd(), limit: 10 };
   for (let i = 0; i < argv.length; i += 1) {
     if (argv[i] === "--cwd") {
       args.cwd = argv[i + 1];
+      i += 1;
+    } else if (argv[i] === "--limit") {
+      const limit = Number.parseInt(argv[i + 1], 10);
+      if (!Number.isInteger(limit) || limit < 1 || limit > 50) {
+        console.error("Usage: node list-codex-projects.mjs [--cwd <path>] [--limit 1..50]");
+        process.exit(2);
+      }
+      args.limit = limit;
       i += 1;
     }
   }
@@ -47,16 +53,10 @@ for (const [file, meta] of metaMap) {
     displayName: displayNameFromCwd(cwd),
     sessionCount: 0,
     sessionKinds: { interactive: 0, automation: 0, subagent: 0 },
-    lastModified: updatedAt,
-    threadNames: [],
-    sampleSessionIds: []
+    lastModified: updatedAt
   };
   entry.sessionCount += 1;
   entry.sessionKinds[kind] = (entry.sessionKinds[kind] || 0) + 1;
-  if (meta.id && entry.sampleSessionIds.length < 3) entry.sampleSessionIds.push(meta.id);
-  if (indexed?.thread_name && entry.threadNames.length < 5) {
-    entry.threadNames.push(indexed.thread_name);
-  }
   if (new Date(updatedAt) > new Date(entry.lastModified)) {
     entry.lastModified = updatedAt;
   }
@@ -99,11 +99,11 @@ function aggregate(project) {
   const summary = {
     cwd: project.cwd,
     displayName: project.displayName,
+    ownSessionCount: project.sessionCount,
     sessionCount: project.sessionCount,
+    totalSessionCount: project.sessionCount,
     sessionKinds: { ...project.sessionKinds },
     lastModified: project.lastModified,
-    threadNames: project.threadNames,
-    sampleSessionIds: project.sampleSessionIds,
     childProjectCount: 0,
     childSessionCount: 0
   };
@@ -120,6 +120,8 @@ function aggregate(project) {
     }
     stack.push(...(child.children || []));
   }
+  summary.totalSessionCount = summary.ownSessionCount + summary.childSessionCount;
+  summary.sessionCount = summary.totalSessionCount;
   return summary;
 }
 
@@ -127,6 +129,7 @@ const projects = [...roots.values()]
   .map(aggregate)
   .sort((a, b) => new Date(b.lastModified) - new Date(a.lastModified))
   .map((project, index) => ({ index: index + 1, ...project }));
+const aggregateByCwd = new Map(projects.map((project) => [project.cwd, project]));
 
 // --- cwd match runs over ALL project cwds (children included) ---
 const flat = [...grouped.values()];
@@ -145,22 +148,29 @@ const matches = flat
   .sort((a, b) => a.rank - b.rank || new Date(b.project.lastModified) - new Date(a.project.lastModified));
 
 const cwdMatch = matches[0]
-  ? {
-      cwd: matches[0].project.cwd,
-      displayName: matches[0].project.displayName,
-      sessionCount: matches[0].project.sessionCount,
-      sessionKinds: matches[0].project.sessionKinds,
-      lastModified: matches[0].project.lastModified,
-      matchType: matches[0].matchType
-    }
+  ? (() => {
+      const matched = matches[0];
+      const aggregateMatch = aggregateByCwd.get(matched.project.cwd);
+      const sessionCount = aggregateMatch?.totalSessionCount ?? matched.project.sessionCount;
+      return {
+        cwd: matched.project.cwd,
+        displayName: matched.project.displayName,
+        ownSessionCount: matched.project.sessionCount,
+        sessionCount,
+        totalSessionCount: sessionCount,
+        sessionKinds: aggregateMatch?.sessionKinds ?? matched.project.sessionKinds,
+        lastModified: aggregateMatch?.lastModified ?? matched.project.lastModified,
+        matchType: matched.matchType
+      };
+    })()
   : null;
 
 console.log(JSON.stringify({
-  codexHome: CODEX_HOME,
   sessionFileCount: files.length,
   count: projects.length,
+  returnedCount: Math.min(projects.length, args.limit),
   flatCount: flat.length,
   cwd: currentCwd,
   cwdMatch,
-  projects
+  projects: projects.slice(0, args.limit)
 }, null, 2));

@@ -1,5 +1,17 @@
 # Changelog
 
+## 1.3.0 — 2026-07-10
+
+**Deterministic score ownership, strict contracts, and explicit privacy modes.**
+
+- Split the pipeline into deterministic facts and baselines, compact model input, model-authored qualitative analysis, strict finalization, and validated HTML rendering.
+- Added report schema 3.0 with distinct `formulaBaseline`, confidence-scaled `startingScore`, bounded `adjustment`, and script-calculated final/category/overall scores.
+- Added strict validation for evidence IDs, adjustment caps, bilingual fields, suggestion payloads, priority ordering, and conditional `AGENTS.md` drafts.
+- Added standard credential redaction and strict minimized-evidence privacy mode (no message/command snippets, thread titles, search queries, or episode opening/closing text), private directory/file permissions, seven-day temp cleanup, and shell-free browser opening.
+- Added deterministic recipe triggers, incident IDs, folded-project count consistency, multi-stack manifest/test discovery, and broader proof-command recognition.
+- Expanded the regression suite to cover the full facts → model input → analysis → final report → HTML workflow plus privacy, security, and multi-stack behavior.
+- Corrected documentation to distinguish local script execution from qualitative interpretation inside the active Codex session.
+
 ## 1.2.0 — 2026-07-10
 
 **Dashboard redesign — from admin panel to coaching report.**
@@ -24,4 +36,4 @@
 
 ## 1.0.0 — 2026-06-05
 
-- Initial release: 9 dimensions × 3 categories, deterministic parser + model adjustment + single-file HTML dashboard, transparent rubric, 100% local.
+- Initial release: 9 dimensions × 3 categories, deterministic parser + model adjustment + single-file HTML dashboard, and a transparent rubric.

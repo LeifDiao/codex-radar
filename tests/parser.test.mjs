@@ -4,11 +4,26 @@ import { execFileSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { buildFixtureProject } from "./helpers.mjs";
+import {
+  buildFixtureProject,
+  evt,
+  makeTempHome,
+  sessionMeta,
+  writeSession
+} from "./helpers.mjs";
+import { selectTriggeredRecipes } from "../plugins/codex-radar/skills/analyze/scripts/recipe-triggers.mjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PARSER = path.join(__dirname, "..", "plugins", "codex-radar", "skills", "analyze", "scripts", "parse-codex-project.mjs");
 const LISTER = path.join(__dirname, "..", "plugins", "codex-radar", "skills", "analyze", "scripts", "list-codex-projects.mjs");
+const RUBRIC = JSON.parse(fs.readFileSync(path.join(
+  __dirname,
+  "..",
+  "plugins",
+  "codex-radar",
+  "data",
+  "rubric.json"
+), "utf8"));
 
 function runParser(fixture) {
   const stdout = execFileSync("node", [PARSER, fixture.projectCwd], {
@@ -133,6 +148,20 @@ test("summary output includes drift warnings array", () => {
   assert.ok(Array.isArray(summary.parserWarnings));
 });
 
+test("asset-dependent recipes do not fire when the project cwd is unresolved", () => {
+  const unresolved = structuredClone(facts);
+  unresolved.stats.sessions = 6;
+  unresolved.outcomeTotals.fileEditCount = 20;
+  unresolved.projectAssets.cwdResolved = false;
+  unresolved.projectAssets.hasAgentsMd = false;
+  unresolved.projectAssets.hasTestsDir = false;
+  unresolved.computedBaselines.architecture.applicable = false;
+  const ids = selectTriggeredRecipes(RUBRIC, unresolved).map((recipe) => recipe.id);
+  assert.ok(!ids.includes("scene-setting-persist-context"));
+  assert.ok(!ids.includes("architecture-create-agents-md"));
+  assert.ok(!ids.includes("architecture-add-test-harness"));
+});
+
 test("list-codex-projects reports sessionKinds and uses the meta cache", () => {
   const run = () => JSON.parse(execFileSync("node", [LISTER, "--cwd", fixture.projectCwd], {
     encoding: "utf8",
@@ -145,4 +174,80 @@ test("list-codex-projects reports sessionKinds and uses the meta cache", () => {
   assert.ok(fs.existsSync(cachePath), "meta cache written");
   const second = run();
   assert.deepEqual(second.cwdMatch, first.cwdMatch, "cached run returns identical results");
+});
+
+test("list-codex-projects limits selection output and omits history titles", () => {
+  const home = makeTempHome("codex-radar-list-limit-");
+  for (let index = 0; index < 12; index += 1) {
+    const cwd = path.join(home.root, `project-${index}`);
+    fs.mkdirSync(cwd, { recursive: true });
+    writeSession(home.codexHome, `2026/07/10/project-${index}.jsonl`, [
+      sessionMeta({ id: `project-${index}`, cwd }),
+      evt.userMessage(`Private project request ${index}`),
+      evt.taskComplete("done")
+    ]);
+  }
+  const listed = JSON.parse(execFileSync("node", [LISTER, "--cwd", home.root], {
+    encoding: "utf8",
+    env: { ...process.env, CODEX_HOME: home.codexHome, CODEX_RADAR_HOME: home.radarHome }
+  }));
+  assert.equal(listed.count, 12);
+  assert.equal(listed.returnedCount, 10);
+  assert.equal(listed.projects.length, 10);
+  assert.ok(!("codexHome" in listed));
+  assert.ok(listed.projects.every((entry) => !("threadNames" in entry)));
+  assert.ok(listed.projects.every((entry) => !("sampleSessionIds" in entry)));
+});
+
+test("folded project counts remain internally consistent", () => {
+  const home = makeTempHome("codex-radar-fold-");
+  const rootCwd = path.join(home.root, "root-project");
+  const childCwd = path.join(rootCwd, "generated", "run-1");
+  fs.mkdirSync(childCwd, { recursive: true });
+  writeSession(home.codexHome, "2026/07/10/root.jsonl", [
+    sessionMeta({ id: "root-session", cwd: rootCwd }),
+    evt.userMessage("Fix src/app.js"),
+    evt.taskComplete("done")
+  ]);
+  for (let index = 0; index < 2; index += 1) {
+    writeSession(home.codexHome, `2026/07/10/child-${index}.jsonl`, [
+      sessionMeta({ id: `child-${index}`, cwd: childCwd, source: "exec" }),
+      evt.userMessage(`Generate output ${index}`),
+      evt.taskComplete("done")
+    ]);
+  }
+  const listed = JSON.parse(execFileSync("node", [LISTER, "--cwd", rootCwd], {
+    encoding: "utf8",
+    env: { ...process.env, CODEX_HOME: home.codexHome, CODEX_RADAR_HOME: home.radarHome }
+  }));
+  const project = listed.projects.find((entry) => entry.cwd === rootCwd);
+  assert.equal(project.ownSessionCount, 1);
+  assert.equal(project.childSessionCount, 2);
+  assert.equal(project.totalSessionCount, 3);
+  assert.equal(project.sessionCount, 3);
+  assert.equal(Object.values(project.sessionKinds).reduce((sum, count) => sum + count, 0), 3);
+  assert.equal(listed.cwdMatch.totalSessionCount, 3);
+  assert.equal(listed.cwdMatch.sessionCount, 3);
+});
+
+test("project assets recognize non-JS manifests and nested tests", () => {
+  const home = makeTempHome("codex-radar-stack-");
+  const projectCwd = path.join(home.root, "go-project");
+  fs.mkdirSync(path.join(projectCwd, "internal", "parser"), { recursive: true });
+  fs.writeFileSync(path.join(projectCwd, "go.mod"), "module example.test/project\n");
+  fs.writeFileSync(path.join(projectCwd, "internal", "parser", "parser_test.go"), "package parser\n");
+  writeSession(home.codexHome, "2026/07/10/go.jsonl", [
+    sessionMeta({ id: "go-session", cwd: projectCwd }),
+    evt.userMessage("Fix internal/parser/parser.go and run go test ./..."),
+    evt.taskComplete("done")
+  ]);
+  const { facts: stackFacts } = runParser({
+    codexHome: home.codexHome,
+    radarHome: home.radarHome,
+    projectCwd
+  });
+  assert.equal(stackFacts.projectAssets.hasManifest, true);
+  assert.ok(stackFacts.projectAssets.manifestFiles.includes("go.mod"));
+  assert.ok(stackFacts.projectAssets.detectedStacks.includes("go"));
+  assert.equal(stackFacts.projectAssets.hasTestsDir, true);
 });

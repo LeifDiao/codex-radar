@@ -14,6 +14,58 @@ export function ensureDir(dir) {
   fs.mkdirSync(dir, { recursive: true });
 }
 
+export function ensurePrivateDir(dir) {
+  fs.mkdirSync(dir, { recursive: true, mode: 0o700 });
+  try {
+    fs.chmodSync(dir, 0o700);
+  } catch {
+    // Some filesystems do not expose POSIX permissions.
+  }
+}
+
+export function writeFilePrivate(filePath, data) {
+  ensurePrivateDir(path.dirname(filePath));
+  fs.writeFileSync(filePath, data, { encoding: "utf8", mode: 0o600 });
+  makeFilePrivate(filePath);
+}
+
+export function makeFilePrivate(filePath) {
+  try {
+    fs.chmodSync(filePath, 0o600);
+    return true;
+  } catch {
+    // Some filesystems do not expose POSIX permissions.
+    return false;
+  }
+}
+
+export function appendFilePrivate(filePath, data) {
+  ensurePrivateDir(path.dirname(filePath));
+  fs.appendFileSync(filePath, data, { encoding: "utf8", mode: 0o600 });
+  makeFilePrivate(filePath);
+}
+
+export function cleanupOldFiles(dir, {
+  maxAgeMs = 7 * 24 * 60 * 60 * 1000,
+  prefixes = []
+} = {}) {
+  const now = Date.now();
+  let removed = 0;
+  for (const name of safeReadDir(dir)) {
+    if (prefixes.length && !prefixes.some((prefix) => name.startsWith(prefix))) continue;
+    const filePath = path.join(dir, name);
+    const stat = statSafe(filePath);
+    if (!stat?.isFile() || now - stat.mtimeMs <= maxAgeMs) continue;
+    try {
+      fs.unlinkSync(filePath);
+      removed += 1;
+    } catch {
+      // Retention cleanup is best-effort.
+    }
+  }
+  return removed;
+}
+
 export function fileExists(filePath) {
   try {
     return fs.existsSync(filePath);
@@ -153,8 +205,10 @@ export async function loadSessionMetasCached(files) {
   }
   if (dirty || Object.keys(cache).length !== Object.keys(nextCache).length) {
     try {
-      ensureDir(path.dirname(META_CACHE_PATH()));
-      fs.writeFileSync(META_CACHE_PATH(), JSON.stringify({ schemaVersion: "meta-cache-1", entries: nextCache }));
+      writeFilePrivate(
+        META_CACHE_PATH(),
+        JSON.stringify({ schemaVersion: "meta-cache-1", entries: nextCache })
+      );
     } catch { /* cache write failure is non-fatal */ }
   }
   return result;
@@ -200,6 +254,25 @@ export function clip(text, max = 160) {
   const normalized = String(text || "").replace(/\s+/g, " ").trim();
   if (normalized.length <= max) return normalized;
   return `${normalized.slice(0, max - 1)}…`;
+}
+
+export function redactSensitiveText(value) {
+  let text = String(value || "");
+  text = text.replace(
+    /-----BEGIN (?:RSA |EC |OPENSSH |DSA )?PRIVATE KEY-----[\s\S]*?-----END (?:RSA |EC |OPENSSH |DSA )?PRIVATE KEY-----/gi,
+    "[REDACTED PRIVATE KEY]"
+  );
+  text = text.replace(/\b(?:sk|rk|pk)-[A-Za-z0-9_-]{16,}\b/g, "[REDACTED OPENAI KEY]");
+  text = text.replace(/\b(?:ghp|gho|ghu|ghs|ghr)_[A-Za-z0-9]{20,}\b/g, "[REDACTED GITHUB TOKEN]");
+  text = text.replace(/\bgithub_pat_[A-Za-z0-9_]{20,}\b/g, "[REDACTED GITHUB TOKEN]");
+  text = text.replace(/\bAKIA[0-9A-Z]{16}\b/g, "[REDACTED AWS ACCESS KEY]");
+  text = text.replace(/\bBearer\s+[A-Za-z0-9._~+/=-]{12,}\b/gi, "Bearer [REDACTED]");
+  text = text.replace(/\beyJ[A-Za-z0-9_-]{8,}\.[A-Za-z0-9_-]{8,}\.[A-Za-z0-9_-]{8,}\b/g, "[REDACTED JWT]");
+  text = text.replace(
+    /((?:api[_-]?key|access[_-]?token|auth[_-]?token|secret|password|passwd|pwd)\s*[:=]\s*["']?)([^"'\s,;]+)/gi,
+    "$1[REDACTED]"
+  );
+  return text;
 }
 
 export function extractTextContent(content) {
@@ -271,4 +344,12 @@ export function topCounts(counts, limit = 12) {
     .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
     .slice(0, limit)
     .map(([name, count]) => ({ name, count }));
+}
+
+function safeReadDir(dir) {
+  try {
+    return fs.readdirSync(dir);
+  } catch {
+    return [];
+  }
 }

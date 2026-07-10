@@ -1,13 +1,12 @@
 # Codex Radar
 
-> **一款 Codex 插件，读取你本地的 Codex 会话记录，评估你和 Codex 协作的质量。** 从「沟通力 / 工程力 / 成效」三个层面、9 个维度打分 —— 由你自己的 Codex 模型对照公开 rubric 打分并撰写诊断，输出一组可直接粘贴的改写 prompt 和一个专业可读的单文件 HTML dashboard。全程本地。
+> **一款 Codex 插件，读取本地 Codex 会话记录，评估你和 Codex 协作的质量。** 从「沟通力 / 工程力 / 成效」三个层面、9 个维度分析：确定性脚本提取事实、计算全部分数、校验报告契约并渲染单文件 HTML；当前 Codex 会话只负责有界证据微调和定性诊断。
 
 🌏 [English](./README.md) · 📖 [方法论](./docs/METHODOLOGY_zh.md) · 🖥 [在线预览](https://leifdiao.github.io/codex-radar/) · ⚖️ [协议](./LICENSE)
 
-> **English summary:** A Codex plugin that reads your local Codex session history and grades how well you collaborate with the agent across 9 dimensions in 3 categories. Your own Codex model scores the sessions against a transparent rubric and writes a free-form diagnosis, plus paste-ready improvement prompts and a professional single-file HTML dashboard. 100% local. Full English docs → [README.md](./README.md)
+> **English summary:** A Codex plugin that analyzes local Codex session history across 9 dimensions. Deterministic scripts calculate and validate every score; the active Codex session writes bounded evidence adjustments and the qualitative diagnosis. Full English docs → [README.md](./README.md)
 
-
-<img alt="Codex Radar dashboard — 结论区：九维雷达图与重点评价" src="./docs/assets/dashboard-preview.png" />
+<img width="1466" height="1088" alt="Codex Radar 报告：协作等级、分类分数、九维雷达图与重点结论" src="https://github.com/user-attachments/assets/41cc593c-e546-4222-829f-c96fe87960a8" />
 
 ---
 
@@ -15,7 +14,7 @@
 
 **🎯 评估你真实的 Codex 会话记录，不靠人工题库。** Codex Radar 直接解析 Codex 已经写好的 JSONL —— 兼容新旧两代落盘格式：每条 prompt、每条 shell 命令和它的退出码、每次 `apply_patch` 编辑、每次 plan 更新，以及 MCP / 搜索 / 子代理调用。子代理线程会被剔除（那些"用户消息"是 agent 写的），`codex exec` 批量运行按自动化画像评判，不会冒充你的对话水平。
 
-**💬 你的 Codex 亲自给你写诊断，而不只是给分数。** 确定性解析器提取事实，并**用代码算出全部公式基线**——天然可复现。你的 Codex 模型只做按数据置信度封顶的证据微调（±5/±10/±15），并写出自由格式的协作诊断。每条结论都引用一个带 id、可点击下钻的证据原子。
+**💬 模型写诊断，脚本管数学。** 解析器计算全部公式基线，模型只写按置信度封顶的证据微调和定性内容；严格 finalizer 校验证据 ID、微调上限、建议 payload 和双语字段，再计算最终分、分类分和总分。
 
 **📋 建议是类型化干预，不是空话。** 话术改写、工作流 playbook、可直接落盘的 setup 文件（包括自动生成的 `AGENTS.md` 草稿）、工具接入方案、完成定义仪式 —— 每条都基于引用的证据，每条都带一个 `verifyBy` 指标，下次报告可以核对它有没有生效。
 
@@ -25,15 +24,15 @@
 
 **📈 每次运行都记得上一次。** 报告在本地留档 —— 第二次运行起显示分数趋势和各维度 delta（"较上次：验证意识 +9"），和每条建议的 `verifyBy` 形成闭环。
 
-**🔒 全本地，零数据上传。** 只读访问 `~/.codex/sessions`，无 API key、无云端、不发任何网络请求。报告是经过转义的单文件 HTML，写到 `~/.codex-radar/reports/`。
+**🔒 本地产物与明确的隐私模式。** 插件脚本不发网络请求、无需单独 API key。标准模式自动脱敏常见凭证；严格模式不保留消息/命令片段、thread 标题、搜索词及会话开场/收尾文本。facts、analysis、报告和缓存以私有权限写入 `~/.codex-radar/`。模型解释仍发生在当前 Codex 会话中，并遵循该会话的数据处理设置。
 
 > **English highlights:**
 > - **🎯 Reads your real Codex sessions** — prompts, shell exit codes, `apply_patch` edits, plan updates, MCP / search / image / subagent calls
-> - **💬 Your Codex writes the diagnosis** — facts parser + model scoring against a transparent rubric (formula baseline + evidence-cited adjustment)
+> - **💬 The model writes the diagnosis; scripts own the math** — deterministic baselines, bounded adjustments, strict finalization
 > - **📋 Every suggestion is a paste-ready prompt** with its expected impact
 > - **⚖️ Project-type-aware weighting** — N/A instead of a faked 50 when a signal can't be evaluated
 > - **🛠 Evaluates platform leverage** (shell / patch / plan / MCP / search / image / subagents + AGENTS.md scaffolding)
-> - **🔒 100% local, zero telemetry**
+> - **🔒 Local-first artifacts, credential redaction, and strict minimized-evidence mode**
 >
 > Full English version → [README.md](./README.md)
 
@@ -99,8 +98,9 @@ Run Codex Radar on this project
 
 1. Codex Radar 在本地会话记录里检测你的当前工作目录，问你是不是分析这个项目。
 2. 确认即用，或者从「最近项目」列表里选。
-3. 解析 + 评分 —— 几秒钟，纯 Node，不用等模型。
-4. Dashboard 写入 `~/.codex-radar/reports/`，并把路径打印出来供你打开。
+3. 解析确定性事实并生成精简、带不可信数据边界的 model input。
+4. Codex 撰写定性分析；finalizer 严格校验并计算全部分数。
+5. Dashboard 写入 `~/.codex-radar/reports/`，并打印路径。
 
 像 *"Analyze my Codex collaboration"* 或 *"Create a Codex Radar report"* 这样的起手 prompt 同样有效。
 
@@ -116,25 +116,30 @@ Run Codex Radar on this project
 
 ## 隐私
 
-你的会话数据始终留在本地：
+Codex Radar 尽量减少暴露，并将生成产物保留在本地：
 
-- 所有计算本地完成 —— 不发任何网络请求、无 API key、无遥测
+- 插件脚本不发网络请求、无需单独 API key，也不发送插件遥测
 - `~/.codex/sessions`、`~/.codex/archived_sessions`、`~/.codex/session_index.jsonl` 只读访问
-- 报告写入 `~/.codex-radar/reports/`（临时 JSON 写入 `~/.codex-radar/temp/`）
+- 标准模式会在证据落盘前脱敏常见 API key、token、密码、JWT 和私钥
+- 严格模式会省略消息/命令片段、thread 标题、搜索词及会话开场/收尾文本
+- 报告和临时 JSON 使用私有文件权限，超过 7 天的临时分析文件会被清理
 - 项目资产检测只判断 `AGENTS.md`、`.git`、测试目录等文件是否存在，从不读取它们的内容
 - 报告可能包含你自己 prompt 的短片段作为证据 —— 除非你主动分享，否则请把 HTML 当作私有文件
+- 定性解释由当前 Codex 会话完成，其数据处理遵循你的 Codex 配置与账号/工作区策略
 
-完整数据清单见 [PRIVACY.md](./PRIVACY.md)。
+需要完全不保留 prompt、thread 标题或搜索词片段时，通过 skill 使用 `strict` 隐私模式。
 
 ---
 
 ## 评分原理
 
-**三层架构，与 [Claude Radar](https://github.com/LeifDiao/claude-radar) 一致：**
+**五层受控架构：**
 
 1. **事实 + 基线** —— `parse-codex-project.mjs` 给会话分类（交互式 / 自动化 / 子代理），跨两代落盘格式按 `call_id` 把工具调用与输出 join 起来，提取可计数信号和一层可按 id 引用的证据（原子 / 会话叙事 / 关键事件），并**用代码算出全部 9 个公式基线**。确定性：同一输入 → 同一份事实、同一组基线。
-2. **微调 + 诊断** —— 你的 Codex 模型读取事实和 `data/rubric.json`，对每个维度做按置信度封顶的有界微调，写出有据可查的观察清单、诊断，以及按各维度配方实例化的类型化建议。
-3. **渲染** —— `render-report.mjs` 校验 report schema，追加本地历史，注入趋势与 delta，产出自包含的单文件 HTML。
+2. **模型输入** —— `prepare-model-input.mjs` 自行加载 rubric、用代码判断建议配方是否触发，并生成精简 model input 与私有 `analysis-1` 模板。
+3. **定性解释** —— 当前 Codex 会话只读取精简输入，撰写证据微调、诊断、观察和类型化建议；会话内容被明确视为不可信引用数据。
+4. **确定性收口** —— `finalize-report.mjs` 校验双语字段、证据 ID、微调上限、建议 payload、优先级顺序和 AGENTS.md 条件，然后计算全部最终分并组装 report schema 3.0。
+5. **渲染** —— `render-report.mjs` 再次校验分数一致性，追加本地历史，注入趋势与 delta，产出自包含 HTML。
 
 分析跑在你自己的 Codex 会话里 —— 插件本身不发任何网络请求，也不需要额外的 API key。
 
@@ -144,13 +149,13 @@ Run Codex Radar on this project
 
 ## 评分规则全公开
 
-所有评分输入都在 [`plugins/codex-radar/data/rubric.json`](./plugins/codex-radar/data/rubric.json)：
+维度定义、画像权重、微调规则和建议配方位于 [`plugins/codex-radar/data/rubric.json`](./plugins/codex-radar/data/rubric.json)，9 个可执行公式的唯一来源是 [`scoring.mjs`](./plugins/codex-radar/skills/analyze/scripts/scoring.mjs)：
 
 - 9 个维度的定义（中英）、微调指南、按维度的建议配方
 - 5 种项目画像（含 `automation` 自动化）+ 各自的类别权重表
 - 按置信度封顶的微调上限 + 等级阈值（S / A / B / C / D）
 
-想让评分更贴合团队习惯？改 rubric 和 `parse-codex-project.mjs` 里的可执行公式，然后跑 `node --test tests/*.test.mjs` —— fixture 测试套件会在两代 Codex 落盘格式上给你兜底。
+想让评分更贴合团队习惯？修改 rubric 和 `scoring.mjs`，然后跑 `node --test tests/*.test.mjs` —— 契约测试会覆盖 facts → model input → final report → HTML 的完整链路。
 
 ---
 
@@ -172,14 +177,19 @@ codex-radar/
         ├── data/rubric.json               # 9 维定义、建议配方、画像权重
         ├── viewer/template.html           # 单文件 dashboard 外壳
         └── skills/analyze/
-            ├── SKILL.md                    # 编排：检测 → 解析 → 微调 → 渲染
+            ├── SKILL.md                    # 编排：检测 → 解析 → 定性分析 → 确定性收口
             └── scripts/
                 ├── lib.mjs                 # 共享工具 + 增量 meta 缓存
                 ├── signals.mjs             # 消息分类器、proof/退出码提取
                 ├── list-codex-projects.mjs # 项目列表：类型构成 + 噪声折叠
-                ├── compute-baseline.mjs    # 你的会话指标分布（自我基准，缓存）
-                ├── parse-codex-project.mjs # 事实 + 证据 + 代码计算的基线
-                └── render-report.mjs       # 校验 → 历史/delta → 单文件 HTML
+                ├── compute-baseline.mjs     # 会话指标分布（自我基准，缓存）
+                ├── parse-codex-project.mjs  # 事实 + 脱敏证据
+                ├── scoring.mjs              # 9 个基线公式的唯一来源
+                ├── recipe-triggers.mjs      # 确定性建议配方谓词
+                ├── prepare-model-input.mjs  # 精简模型输入 + analysis 模板
+                ├── report-contract.mjs      # analysis/report 严格校验
+                ├── finalize-report.mjs      # 确定性算分与报告组装
+                └── render-report.mjs        # 历史/delta → 单文件 HTML
 ```
 
 零运行时依赖。

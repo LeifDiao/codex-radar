@@ -59,7 +59,10 @@ test("isProofCommand accepts real verification runners", () => {
   for (const cmd of [
     "npm test", "npm run build", "pnpm run lint", "bun test",
     "pytest -x tests/", "cargo test", "go test ./...", "npx vitest run",
-    "node --test tests/", "tsc", "eslint src/", "make test", "python3 -m pytest"
+    "node --test tests/", "tsc", "eslint src/", "make test", "python3 -m pytest",
+    "./gradlew test", "./mvnw verify", "dotnet test", "bundle exec rspec",
+    "composer test", "swift test", "xcodebuild -scheme App test",
+    "deno test", "flutter analyze", "cmake --build build"
   ]) {
     assert.equal(isProofCommand(cmd), true, cmd);
   }
@@ -68,7 +71,8 @@ test("isProofCommand accepts real verification runners", () => {
 test("isProofCommand rejects proof theater", () => {
   for (const cmd of [
     "echo 验证", "echo done 检查完毕", "ls -la", "cat README.md",
-    "python3 gen.py --render", "screenshot.sh", "git status", "npm install"
+    "python3 gen.py --render", "screenshot.sh", "git status", "npm install",
+    "xcodebuild -list", "dotnet --info", "./gradlew dependencies"
   ]) {
     assert.equal(isProofCommand(cmd), false, cmd);
   }

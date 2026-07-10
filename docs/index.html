@@ -4,9 +4,9 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Codex Radar — Score how you collaborate with Codex</title>
-<meta name="description" content="Codex Radar reads your local Codex sessions; your Codex model scores them across 9 dimensions in 3 categories and writes a diagnosis with paste-ready prompt rewrites, rendered as a single-file HTML dashboard. Transparent rubric, runs in your own Codex session, 100% local.">
+<meta name="description" content="Codex Radar analyzes local Codex sessions across 9 dimensions. Deterministic scripts extract facts, calculate and validate every score, and render a single-file dashboard; your active Codex session writes bounded evidence adjustments and the qualitative diagnosis.">
 <meta property="og:title" content="Codex Radar — Score how you collaborate with Codex">
-<meta property="og:description" content="9 dimensions × 3 categories. Your Codex model scores and writes the diagnosis against a transparent rubric. Paste-ready prompt rewrites. Single-file HTML dashboard. 100% local.">
+<meta property="og:description" content="9 dimensions × 3 categories. Deterministic scoring, evidence-cited diagnosis, paste-ready prompt rewrites, and a single-file HTML dashboard with explicit privacy controls.">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://leifdiao.github.io/codex-radar/">
 <style>
@@ -135,7 +135,7 @@
   .cat-dim-desc { font-size: 12px; color: var(--muted); margin-top: 4px; line-height: 1.5; }
 
   /* ── Steps ── */
-  .steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+  .steps { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 16px; }
   .step { background: var(--bg); border: 1px solid var(--line); border-radius: var(--radius); padding: 24px 22px; }
   .step-num { width: 32px; height: 32px; border-radius: 999px; background: var(--ink); color: #fff; display: grid; place-items: center; font-weight: 700; font-size: 14px; margin-bottom: 14px; }
   .step h3 { font-size: 15px; font-weight: 700; margin: 0 0 6px; }
@@ -220,7 +220,7 @@
     <div>
       <div class="eyebrow"><span class="dot"></span><span data-en="CODEX CLI PLUGIN" data-zh="CODEX CLI 插件">CODEX CLI PLUGIN</span></div>
       <h1 data-en="You use Codex every day,<br><span class='g'>but can't see where you fall short.</span>" data-zh="你天天用 Codex，<br><span class='g'>却不知道自己哪儿用得不好。</span>">You use Codex every day,<br><span class="g">but can't see where you fall short.</span></h1>
-      <p class="hero-sub" data-en="Codex Radar replays the real sessions you've already run — not a quiz. It pulls the facts out of them, then has your own Codex score them against a public rubric and write the diagnosis across 9 dimensions in 3 categories — Communication, Engineering, Outcome — pinpointing where you hold yourself back, every conclusion traceable to a signal in your sessions. Then it hands you rewrite prompts to paste straight into your next thread — read them and you know what to change." data-zh="Codex Radar 复盘你已经跑完的真实会话，不是让你答题。先把会话里的事实抠出来，再让你自己的 Codex 对照公开 rubric 打分、写诊断，从沟通力 / 工程力 / 成效共 9 个维度，点出你哪里在拖后腿——每条结论都追得到会话里的一个信号。最后给你一组能直接粘进下个 thread 的改写 prompt，看完就能照着改。">Codex Radar replays the real sessions you've already run — not a quiz. It pulls the facts out of them, then has your own Codex score them against a public rubric and write the diagnosis across 9 dimensions in 3 categories — Communication, Engineering, Outcome — pinpointing where you hold yourself back, every conclusion traceable to a signal in your sessions. Then it hands you rewrite prompts to paste straight into your next thread — read them and you know what to change.</p>
+        <p class="hero-sub" data-en="Codex Radar replays the real sessions you've already run — not a quiz. Deterministic scripts extract the facts, compute the formula baselines, validate every evidence reference, and calculate the final scores across Communication, Engineering, and Outcome. Your active Codex session contributes only bounded evidence adjustments and the qualitative diagnosis, then gives you prompt rewrites to use in your next thread." data-zh="Codex Radar 复盘你已经跑完的真实会话，不是让你答题。确定性脚本提取事实、计算公式基线、校验证据引用，并算出沟通力 / 工程力 / 成效共 9 个维度的最终分。当前 Codex 会话只负责有界的证据微调和定性诊断，最后给出可直接用于下个 thread 的改写 prompt。">Codex Radar replays the real sessions you've already run — not a quiz. Deterministic scripts extract the facts, compute the formula baselines, validate every evidence reference, and calculate the final scores across Communication, Engineering, and Outcome. Your active Codex session contributes only bounded evidence adjustments and the qualitative diagnosis, then gives you prompt rewrites to use in your next thread.</p>
       <div class="hero-cta">
         <a class="btn btn-lg btn-primary" href="#install" data-en="Get started" data-zh="马上开始">Get started
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
@@ -295,7 +295,7 @@
       <div class="card">
         <div class="card-ic"><svg viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h10"/><circle cx="18" cy="17" r="2.2" fill="currentColor" stroke="none"/></svg></div>
         <h3 data-en="Every score points back to your own words" data-zh="每个分数都指得回你说过的话，你才服气">Every score points back to your own words</h3>
-        <p data-en="A parser extracts the facts first; then your own Codex scores them against a <strong>public rubric</strong> — a formula baseline plus a bounded, <strong>evidence-cited</strong> adjustment — and writes a plain-language diagnosis. No black box: every conclusion traces to a signal in your sessions, one you recognize and can act on." data-zh="先由解析器把事实抠干净，再让你自己的 Codex 对照<strong>公开 rubric</strong> 打分——公式打底，加一段<strong>引用证据</strong>的微调——然后写出一段说人话的诊断。没有黑盒：每条结论都追得到你会话里的一个信号，你认得出来，也改得动。">A parser extracts the facts first; then your own Codex scores them against a <strong>public rubric</strong> — a formula baseline plus a bounded, <strong>evidence-cited</strong> adjustment — and writes a plain-language diagnosis. No black box: every conclusion traces to a signal in your sessions, one you recognize and can act on.</p>
+          <p data-en="A parser extracts facts and computes the <strong>formula baselines</strong>. Your active Codex session proposes bounded, <strong>evidence-cited</strong> adjustments and writes the diagnosis; a strict finalizer validates those references and calculates every final score. No hidden arithmetic and no uncited adjustment." data-zh="解析器先提取事实并计算<strong>公式基线</strong>。当前 Codex 会话提出有界、<strong>引用证据</strong>的微调并撰写诊断；严格 finalizer 再校验引用并计算全部最终分。没有隐藏算术，也没有无证据微调。">A parser extracts facts and computes the <strong>formula baselines</strong>. Your active Codex session proposes bounded, <strong>evidence-cited</strong> adjustments and writes the diagnosis; a strict finalizer validates those references and calculates every final score. No hidden arithmetic and no uncited adjustment.</p>
       </div>
       <div class="card">
         <div class="card-ic"><svg viewBox="0 0 24 24"><rect x="5" y="4" width="14" height="17" rx="2"/><path d="M9 4V3h6v1"/><path d="M8.5 11l2 2 4-4"/></svg></div>
@@ -355,27 +355,39 @@
     <div class="sheading center">
       <div class="stitle" data-en="How it works" data-zh="工作原理">How it works</div>
       <h2 data-en="Facts in, judgment out" data-zh="先取事实，再下判断">Facts in, judgment out</h2>
-      <p data-en="Three stages, all on your machine: a deterministic parser extracts the facts, your Codex model applies the rubric, and a renderer builds the dashboard." data-zh="三个阶段，全部在你本机完成：确定性解析器提取事实，你的 Codex 模型套用 rubric，再渲染成 dashboard。">Three stages, all on your machine: a deterministic parser extracts the facts, your Codex model applies the rubric, and a renderer builds the dashboard.</p>
+        <p data-en="Five controlled steps separate deterministic evidence and scoring from model-authored interpretation." data-zh="五个受控步骤，把确定性证据与评分和模型撰写的解释明确分开。">Five controlled steps separate deterministic evidence and scoring from model-authored interpretation.</p>
     </div>
     <div class="steps">
       <div class="step">
         <div class="step-num">1</div>
-        <h3 data-en="Detect &amp; parse" data-zh="检测与解析">Detect &amp; parse</h3>
-        <p data-en="Scans your local sessions, matches the current project, and extracts countable signals." data-zh="扫描你本地的会话，匹配当前项目，提取可计数的信号。">Scans your local sessions, matches the current project, and extracts countable signals.</p>
-        <code>~/.codex/sessions</code>
-      </div>
-      <div class="step">
-        <div class="step-num">2</div>
-        <h3 data-en="Score &amp; diagnose" data-zh="评分与诊断">Score &amp; diagnose</h3>
-        <p data-en="Your Codex applies the rubric's formula baseline, adds a bounded evidence-based adjustment, and writes the diagnosis." data-zh="你的 Codex 套用 rubric 的公式基线，加上有界的、基于证据的微调，并撰写诊断。">Your Codex applies the rubric's formula baseline, adds a bounded evidence-based adjustment, and writes the diagnosis.</p>
-        <code>rubric.json</code>
-      </div>
-      <div class="step">
-        <div class="step-num">3</div>
-        <h3 data-en="Render" data-zh="渲染">Render</h3>
-        <p data-en="Writes a self-contained HTML dashboard you can open, scan, and share." data-zh="输出一个自包含的 HTML dashboard，可打开、可浏览、可分享。">Writes a self-contained HTML dashboard you can open, scan, and share.</p>
-        <code>~/.codex-radar/reports</code>
-      </div>
+          <h3 data-en="Parse &amp; score facts" data-zh="解析事实与基线">Parse &amp; score facts</h3>
+          <p data-en="Matches the project, extracts redacted signals and evidence, then computes all formula baselines in code." data-zh="匹配项目，提取经脱敏的信号与证据，再用代码计算全部公式基线。">Matches the project, extracts redacted signals and evidence, then computes all formula baselines in code.</p>
+          <code>~/.codex/sessions</code>
+        </div>
+        <div class="step">
+          <div class="step-num">2</div>
+          <h3 data-en="Prepare model input" data-zh="准备模型输入">Prepare model input</h3>
+          <p data-en="Evaluates recipe triggers in code and emits a compact input with an explicit untrusted-data boundary." data-zh="用代码判断建议配方是否触发，并生成带明确不可信数据边界的精简输入。">Evaluates recipe triggers in code and emits a compact input with an explicit untrusted-data boundary.</p>
+          <code>model-input.json</code>
+        </div>
+        <div class="step">
+          <div class="step-num">3</div>
+          <h3 data-en="Interpret" data-zh="定性解释">Interpret</h3>
+          <p data-en="Your active Codex session writes evidence adjustments, observations, diagnosis, and typed suggestions." data-zh="当前 Codex 会话撰写证据微调、观察、诊断和类型化建议。">Your active Codex session writes evidence adjustments, observations, diagnosis, and typed suggestions.</p>
+          <code>analysis-1.json</code>
+        </div>
+        <div class="step">
+          <div class="step-num">4</div>
+          <h3 data-en="Validate &amp; finalize" data-zh="校验与收口">Validate &amp; finalize</h3>
+          <p data-en="Rejects invalid evidence or adjustments, then calculates final, category, and overall scores." data-zh="拒绝无效证据或越界微调，再计算最终分、分类分和总分。">Rejects invalid evidence or adjustments, then calculates final, category, and overall scores.</p>
+          <code>report-3.0.json</code>
+        </div>
+        <div class="step">
+          <div class="step-num">5</div>
+          <h3 data-en="Render" data-zh="渲染">Render</h3>
+          <p data-en="Writes a validated, self-contained HTML dashboard with history and score deltas." data-zh="输出经过校验、包含历史趋势与分数变化的自包含 HTML dashboard。">Writes a validated, self-contained HTML dashboard with history and score deltas.</p>
+          <code>~/.codex-radar/reports</code>
+        </div>
     </div>
   </div>
 </section>
@@ -404,15 +416,16 @@
   <div class="wrap">
     <div class="sheading center">
       <div class="stitle" data-en="Privacy" data-zh="隐私">Privacy</div>
-      <h2 data-en="100% on your machine" data-zh="数据只在你电脑上">100% on your machine</h2>
-      <p data-en="Your session data never leaves your computer. No network calls, ever." data-zh="你的会话数据不离开本机。不发任何网络请求。">Your session data never leaves your computer. No network calls, ever.</p>
+        <h2 data-en="Local artifacts, controlled disclosure" data-zh="本地产物，受控披露">Local artifacts, controlled disclosure</h2>
+      <p data-en="Bundled scripts make no network calls and write private local artifacts. Standard mode redacts common credentials; strict mode omits message/command snippets, thread titles, web-search queries, and episode opening/closing text. Qualitative interpretation runs in your active Codex session and follows its configured data handling." data-zh="插件脚本不发网络请求，并以私有权限写入本地产物。标准模式脱敏常见凭证；严格模式省略消息/命令片段、thread 标题、搜索词及会话开场/收尾文本。定性解释发生在当前 Codex 会话中，并遵循该会话的数据处理设置。">Bundled scripts make no network calls and write private local artifacts. Standard mode redacts common credentials; strict mode omits message/command snippets, thread titles, web-search queries, and episode opening/closing text. Qualitative interpretation runs in your active Codex session and follows its configured data handling.</p>
     </div>
     <div class="pills">
-      <div class="pill"><span class="dot"></span><span data-en="No cloud" data-zh="不上云">No cloud</span></div>
-      <div class="pill"><span class="dot"></span><span data-en="No separate API key" data-zh="无需额外密钥">No separate API key</span></div>
-      <div class="pill"><span class="dot"></span><span data-en="Runs in your Codex" data-zh="跑在你的 Codex 里">Runs in your Codex</span></div>
-      <div class="pill"><span class="dot"></span><span data-en="No telemetry" data-zh="不采集">No telemetry</span></div>
-      <div class="pill"><span class="dot"></span><span data-en="Read-only sessions" data-zh="只读会话">Read-only sessions</span></div>
+        <div class="pill"><span class="dot"></span><span data-en="No plugin network calls" data-zh="插件脚本无网络请求">No plugin network calls</span></div>
+        <div class="pill"><span class="dot"></span><span data-en="No separate API key" data-zh="无需额外密钥">No separate API key</span></div>
+        <div class="pill"><span class="dot"></span><span data-en="Credential redaction" data-zh="凭证脱敏">Credential redaction</span></div>
+      <div class="pill"><span class="dot"></span><span data-en="Strict minimized-evidence mode" data-zh="严格最小证据模式">Strict minimized-evidence mode</span></div>
+        <div class="pill"><span class="dot"></span><span data-en="Private file permissions" data-zh="私有文件权限">Private file permissions</span></div>
+        <div class="pill"><span class="dot"></span><span data-en="Read-only sessions" data-zh="只读会话">Read-only sessions</span></div>
     </div>
   </div>
 </section>
@@ -443,7 +456,7 @@
 <section class="alt">
   <div class="wrap cta-band">
     <h2 data-en="See exactly how you and Codex work together" data-zh="看清你和 Codex 到底配合得怎么样">See exactly how you and Codex work together</h2>
-    <p data-en="Parsing finishes locally in seconds; scoring runs on the Codex you're already using — no cloud, no extra API key." data-zh="解析在本地几秒出结果；评分用你已经在跑的 Codex，不上云、不用另配 API key。">Parsing finishes locally in seconds; scoring runs on the Codex you're already using — no cloud, no extra API key.</p>
+      <p data-en="Deterministic scoring runs through bundled scripts; qualitative interpretation uses the Codex session you're already in, with no separate API key." data-zh="确定性评分由插件脚本完成；定性解释使用你当前的 Codex 会话，无需另配 API key。">Deterministic scoring runs through bundled scripts; qualitative interpretation uses the Codex session you're already in, with no separate API key.</p>
     <a class="btn btn-lg btn-primary" href="https://github.com/LeifDiao/codex-radar" data-en="Get Codex Radar" data-zh="获取 Codex Radar">Get Codex Radar
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
     </a>

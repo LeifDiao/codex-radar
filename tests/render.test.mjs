@@ -160,10 +160,29 @@ test("rejects a structurally broken report with readable errors", () => {
   assert.ok(failed, "renderer must exit non-zero on invalid report");
 });
 
+test("rejects an unknown report schema instead of treating it as legacy", () => {
+  const home = makeTempHome("codex-radar-render-");
+  const reportPath = path.join(home.root, "unknown-schema.json");
+  for (const schemaVersion of ["2.9", "3.1"]) {
+    fs.writeFileSync(reportPath, JSON.stringify(sampleReport({ schemaVersion })));
+    assert.throws(
+      () => execFileSync("node", [RENDERER, reportPath, "--no-open"], {
+        encoding: "utf8",
+        env: { ...process.env, CODEX_RADAR_HOME: home.radarHome },
+        stdio: ["ignore", "pipe", "pipe"]
+      }),
+      (error) => new RegExp(`Unsupported report schemaVersion: ${schemaVersion.replace(".", "\\.")}`)
+        .test(String(error.stderr))
+    );
+  }
+});
+
 test("second run injects history and delta", () => {
   const home = makeTempHome("codex-radar-render-");
-  runRender(home, sampleReport());
+  const out1 = runRender(home, sampleReport());
   const out2 = runRender(home, sampleReport({ overallScore: 75, overallGrade: "A", generatedAt: "2026-07-07T12:00:00.000Z" }));
+  assert.notEqual(out2, out1, "same-second renders must not overwrite the first report");
+  assert.ok(fs.existsSync(out1));
   const html = fs.readFileSync(out2, "utf8");
   const embedded = html.match(/<script id="report-data" type="application\/json">([\s\S]*?)<\/script>/)[1];
   const report = JSON.parse(embedded.replace(/<\\\/script/g, "</script"));
@@ -171,6 +190,25 @@ test("second run injects history and delta", () => {
   assert.equal(report.delta.overall, 7, "75 - 68");
   const historyLines = fs.readFileSync(path.join(home.radarHome, "history.jsonl"), "utf8").trim().split("\n");
   assert.equal(historyLines.length, 2);
+});
+
+test("history falls back to project name for legacy entries without projectCwd", () => {
+  const home = makeTempHome("codex-radar-render-");
+  fs.mkdirSync(home.radarHome, { recursive: true });
+  fs.writeFileSync(path.join(home.radarHome, "history.jsonl"), JSON.stringify({
+    generatedAt: "2026-07-01T00:00:00.000Z",
+    project: "Fixture Project",
+    overallScore: 60,
+    overallGrade: "B",
+    categoryScores: { communication: 60, engineering: 60, outcome: 60 },
+    dimensions: {}
+  }) + "\n");
+  const outPath = runRender(home, sampleReport());
+  const html = fs.readFileSync(outPath, "utf8");
+  const embedded = html.match(/<script id="report-data" type="application\/json">([\s\S]*?)<\/script>/)[1];
+  const report = JSON.parse(embedded.replace(/<\\\/script/g, "</script"));
+  assert.equal(report.history.length, 1);
+  assert.equal(report.delta.overall, 8);
 });
 
 test("template inline script compiles", () => {

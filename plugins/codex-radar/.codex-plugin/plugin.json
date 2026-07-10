@@ -1,7 +1,7 @@
 {
   "name": "codex-radar",
-  "version": "1.2.0",
-  "description": "Analyze your local Codex collaboration history across 9 dimensions in 3 categories (Communication / Engineering / Outcome): your Codex model scores the sessions and writes a diagnosis with paste-ready prompt rewrites, rendered as a single-file HTML dashboard. 100% local.",
+  "version": "1.3.0",
+  "description": "Analyze local Codex collaboration history across 9 dimensions. Deterministic scripts calculate and validate scores; your active Codex session writes an evidence-grounded diagnosis and action plan.",
   "author": {
     "name": "Leif Diao",
     "email": "leifdiao@gmail.com",
@@ -20,8 +20,8 @@
   ],
   "interface": {
     "displayName": "Codex Radar",
-    "shortDescription": "Score your Codex collaboration, locally.",
-    "longDescription": "Codex Radar reads your local Codex session JSONL files. A deterministic parser extracts the facts, then your own Codex model scores collaboration across 9 dimensions in 3 categories against a transparent rubric, writes a free-form diagnosis, and renders a single-file HTML dashboard with evidence and paste-ready improvement prompts. The plugin makes no network calls of its own and needs no separate API key — the analysis runs inside your Codex session.",
+    "shortDescription": "Evidence-grounded Codex collaboration diagnosis.",
+    "longDescription": "Codex Radar reads local Codex session JSONL files, redacts common credentials, and extracts deterministic facts. Your active Codex session writes bounded evidence adjustments and the qualitative diagnosis; bundled scripts calculate every final score, validate the complete report contract, and render a private single-file HTML dashboard. The plugin scripts make no network calls and require no separate API key.",
     "developerName": "Leif Diao",
     "category": "Productivity",
     "capabilities": [
@@ -34,6 +34,8 @@
       "Create a Codex Radar report"
     ],
     "brandColor": "#2563EB",
-    "websiteURL": "https://leifdiao.github.io/codex-radar/"
+    "websiteURL": "https://leifdiao.github.io/codex-radar/",
+    "privacyPolicyURL": "https://github.com/LeifDiao/codex-radar#privacy",
+    "termsOfServiceURL": "https://github.com/LeifDiao/codex-radar/blob/main/LICENSE"
   }
 }

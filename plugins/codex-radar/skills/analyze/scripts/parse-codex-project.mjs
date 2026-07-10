@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // parse-codex-project.mjs — extract deterministic FACTS from local Codex sessions.
-// It does NOT write prose. The Codex model reads these facts + data/rubric.json and
-// authors the adjustments, diagnosis, and suggestions (see SKILL.md).
+// It does NOT write prose. prepare-model-input.mjs turns these facts into the
+// compact, security-bounded input used for model-authored analysis (see SKILL.md).
 //
 // v2.1: joins function_call/function_call_output by call_id (modern rollout format),
 // classifies sessions (interactive / automation / subagent), computes the baseline
@@ -11,13 +11,12 @@ import fs from "node:fs";
 import path from "node:path";
 import {
   allSessionFiles,
-  clamp,
+  cleanupOldFiles,
   clip,
   CODEX_HOME,
   countBy,
   displayNameFromCwd,
   eachJsonLine,
-  ensureDir,
   extractTextContent,
   fileExists,
   isSameOrChild,
@@ -26,9 +25,11 @@ import {
   loadThreadIndex,
   normalizePath,
   RADAR_HOME,
+  redactSensitiveText,
   ratio,
   readSessionMeta,
-  topCounts
+  topCounts,
+  writeFilePrivate
 } from "./lib.mjs";
 import {
   categorizeTool,
@@ -41,6 +42,7 @@ import {
   sessionKindFromMeta,
   skillNameFromCommand
 } from "./signals.mjs";
+import { computeBaselines, FORMULA_VERSION } from "./scoring.mjs";
 import { fileURLToPath } from "node:url";
 
 const SKILL_DIR = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
@@ -63,11 +65,29 @@ const KNOWN_PAYLOAD_TYPES = new Set([
 ]);
 
 function usage() {
-  console.error("Usage: node parse-codex-project.mjs <project-cwd>");
+  console.error("Usage: node parse-codex-project.mjs <project-cwd> [--privacy standard|strict]");
   process.exit(2);
 }
 
-const projectCwd = normalizePath(process.argv[2]);
+function parseArgs(argv) {
+  const parsed = { projectCwd: null, privacyMode: "standard" };
+  for (let index = 0; index < argv.length; index += 1) {
+    const arg = argv[index];
+    if (arg === "--privacy") {
+      parsed.privacyMode = argv[index + 1];
+      index += 1;
+    } else if (arg.startsWith("--privacy=")) {
+      parsed.privacyMode = arg.slice("--privacy=".length);
+    } else if (!arg.startsWith("--") && !parsed.projectCwd) {
+      parsed.projectCwd = arg;
+    }
+  }
+  if (!["standard", "strict"].includes(parsed.privacyMode)) usage();
+  return parsed;
+}
+
+const cli = parseArgs(process.argv.slice(2));
+const projectCwd = normalizePath(cli.projectCwd);
 if (!projectCwd) usage();
 
 const threadIndex = loadThreadIndex();
@@ -91,7 +111,7 @@ if (selected.length === 0) {
   process.exit(1);
 }
 
-const state = createEmptyState(projectCwd, selectionMode);
+const state = createEmptyState(projectCwd, selectionMode, cli.privacyMode);
 for (const entry of selected) {
   // The cache holds slim metas; re-read the full session_meta for the
   // selected sessions only (dynamic_tools, subagent spawn details).
@@ -115,10 +135,12 @@ const facts = buildFacts(state);
 facts.computedBaselines = computeBaselines(facts);
 
 const tempDir = path.join(RADAR_HOME, "temp");
-ensureDir(tempDir);
+cleanupOldFiles(tempDir, {
+  prefixes: ["codex-facts-", "codex-model-input-", "codex-analysis-", "codex-report-"]
+});
 const stamp = new Date().toISOString().replace(/[:.]/g, "-");
 const factsPath = path.join(tempDir, `codex-facts-${stamp}.json`);
-fs.writeFileSync(factsPath, JSON.stringify(facts, null, 2) + "\n");
+writeFilePrivate(factsPath, JSON.stringify(facts, null, 2) + "\n");
 
 console.log(JSON.stringify({
   factsPath,
@@ -131,6 +153,7 @@ console.log(JSON.stringify({
   humanMessages: facts.stats.humanMessages,
   confidence: facts.confidenceLevel,
   dominantLanguage: facts.dominantLanguage,
+  privacyMode: facts.privacyMode,
   parserWarnings: facts.parserWarnings
 }, null, 2));
 
@@ -138,10 +161,11 @@ console.log(JSON.stringify({
 // State
 // ---------------------------------------------------------------------------
 
-function createEmptyState(cwd, selectionMode) {
+function createEmptyState(cwd, selectionMode, privacyMode) {
   return {
     cwd,
     selectionMode,
+    privacyMode,
     sessions: [],
     humanMessages: [],
     assistantMessages: 0,
@@ -229,7 +253,7 @@ function newSessionRecord(file, meta, kind) {
     timestamp: meta.timestamp || null,
     updatedAt: indexed?.updated_at || meta.timestamp || null,
     lastEventAt: meta.timestamp || null,
-    threadName: indexed?.thread_name || null,
+    threadName: indexed?.thread_name ? clip(redactSensitiveText(indexed.thread_name), 160) : null,
     source: typeof meta.source === "string" ? meta.source : null,
     modelProvider: meta.model_provider || null,
     humanMessages: 0,
@@ -299,7 +323,7 @@ async function parseSession(file, meta, state, kind) {
         session.completedTurns += 1;
         if (payload.last_agent_message) {
           // narrative only — NOT added to agentMessages (agent_message events already count)
-          session.lastAgentMessage = clip(payload.last_agent_message, 220);
+          session.lastAgentMessage = clip(redactSensitiveText(payload.last_agent_message), 220);
         }
         break;
       case "turn_aborted":
@@ -312,7 +336,7 @@ async function parseSession(file, meta, state, kind) {
         break;
       case "agent_message":
         state.agentMessages += 1;
-        if (payload.message) session.lastAgentMessage = clip(payload.message, 220);
+        if (payload.message) session.lastAgentMessage = clip(redactSensitiveText(payload.message), 220);
         break;
       case "message":
         if (payload.role === "assistant") {
@@ -334,7 +358,9 @@ async function parseSession(file, meta, state, kind) {
         break;
       case "web_search_call":
         state.counters.webSearchCalls += 1;
-        if (payload.action?.query) state.webQueries.push(clip(payload.action.query, 120));
+        if (payload.action?.query && state.privacyMode !== "strict") {
+          state.webQueries.push(clip(redactSensitiveText(payload.action.query), 120));
+        }
         addToolCall(state, session, "web_search", payload, timestamp);
         break;
       case "image_generation_call":
@@ -415,7 +441,9 @@ function addHumanMessage(state, session, text, timestamp) {
   state.humanMessages.push(message);
   session.humanMessages += 1;
   session.currentHuman = message;
-  if (session.firstUserMessage === null) session.firstUserMessage = clip(cleaned, 220);
+  if (session.firstUserMessage === null) {
+    session.firstUserMessage = clip(redactSensitiveText(cleaned), 220);
+  }
 
   addSignals(state.signals.directing, features);
   if (message.sessionIndex < 2) addSignals(state.signals.opening, features); // per-session opening
@@ -720,7 +748,9 @@ function buildFacts(state) {
 
   return {
     schemaVersion: "facts-2.1",
+    formulaVersion: FORMULA_VERSION,
     generatedAt: new Date().toISOString(),
+    privacyMode: state.privacyMode,
     source: { codexHome: CODEX_HOME, selectionMode: state.selectionMode },
     project: {
       cwd: state.cwd,
@@ -852,9 +882,33 @@ function inspectProjectAssets(cwd) {
   const resolved = fileExists(cwd);
   const has = (relativePath) => resolved && fileExists(path.join(cwd, relativePath));
   const entries = resolved ? safeReaddir(cwd) : [];
-  const hasPackageJson = has("package.json");
-  const hasPyproject = has("pyproject.toml");
-  const hasCargoToml = has("Cargo.toml");
+  const manifestRules = [
+    ["javascript", /^(package\.json|deno\.jsonc?|bun\.lockb?)$/i],
+    ["python", /^(pyproject\.toml|requirements(?:\.[^.]+)?\.txt|setup\.py|Pipfile)$/i],
+    ["rust", /^Cargo\.toml$/i],
+    ["go", /^go\.mod$/i],
+    ["java", /^(pom\.xml|build\.gradle(?:\.kts)?|settings\.gradle(?:\.kts)?)$/i],
+    ["dotnet", /\.(?:sln|csproj|fsproj|vbproj)$/i],
+    ["swift", /^(Package\.swift|.*\.xcodeproj|.*\.xcworkspace)$/i],
+    ["ruby", /^(Gemfile|Rakefile|.*\.gemspec)$/i],
+    ["php", /^composer\.json$/i],
+    ["elixir", /^mix\.exs$/i],
+    ["dart", /^pubspec\.yaml$/i],
+    ["cpp", /^(CMakeLists\.txt|meson\.build)$/i]
+  ];
+  const manifestFiles = [];
+  const detectedStacks = new Set();
+  for (const entry of entries) {
+    for (const [stack, pattern] of manifestRules) {
+      if (!pattern.test(entry)) continue;
+      manifestFiles.push(entry);
+      detectedStacks.add(stack);
+      break;
+    }
+  }
+  const hasPackageJson = entries.some((entry) => /^package\.json$/i.test(entry));
+  const hasPyproject = entries.some((entry) => /^pyproject\.toml$/i.test(entry));
+  const hasCargoToml = entries.some((entry) => /^Cargo\.toml$/i.test(entry));
   return {
     cwdResolved: resolved,
     hasAgentsMd: has("AGENTS.md"),
@@ -865,9 +919,11 @@ function inspectProjectAssets(cwd) {
     hasPackageJson,
     hasPyproject,
     hasCargoToml,
-    hasManifest: hasPackageJson || hasPyproject || hasCargoToml,
+    hasManifest: manifestFiles.length > 0,
+    manifestFiles: manifestFiles.slice(0, 12),
+    detectedStacks: [...detectedStacks].sort(),
     hasReadme: entries.some((entry) => /^readme\.(md|txt)$/i.test(entry)),
-    hasTestsDir: entries.some((entry) => /^(test|tests|__tests__|spec)$/i.test(entry)),
+    hasTestsDir: resolved && hasTestAssets(cwd),
     rootEntryCount: entries.length
   };
 }
@@ -880,6 +936,39 @@ function safeReaddir(dir) {
   }
 }
 
+function hasTestAssets(root, maxDepth = 2) {
+  const ignored = new Set([
+    ".git", ".hg", ".svn", "node_modules", "vendor", "Pods", ".build",
+    "build", "dist", "coverage", "target", ".venv", "venv"
+  ]);
+  const queue = [{ dir: root, depth: 0 }];
+  while (queue.length) {
+    const { dir, depth } = queue.shift();
+    let entries;
+    try {
+      entries = fs.readdirSync(dir, { withFileTypes: true }).slice(0, 500);
+    } catch {
+      continue;
+    }
+    for (const entry of entries) {
+      if (entry.isDirectory()) {
+        if (/^(test|tests|__tests__|spec|specs|uitests|integration-tests?)$/i.test(entry.name)) return true;
+        if (depth < maxDepth && !ignored.has(entry.name)) {
+          queue.push({ dir: path.join(dir, entry.name), depth: depth + 1 });
+        }
+      } else if (
+        /\.(?:test|spec)\.[cm]?[jt]sx?$/i.test(entry.name)
+        || /_test\.go$/i.test(entry.name)
+        || /(?:Tests?|Spec)\.swift$/i.test(entry.name)
+        || /(?:Test|Tests)\.(?:cs|fs|java|kt|rb|php|py)$/i.test(entry.name)
+      ) {
+        return true;
+      }
+    }
+  }
+  return false;
+}
+
 function classifyProject(state, stats, outcomes, assets) {
   const automationSessions = state.sessions.filter((session) => session.kind === "automation").length;
   const automationShare = ratio(automationSessions, state.sessions.length);
@@ -887,19 +976,34 @@ function classifyProject(state, stats, outcomes, assets) {
   let rationale;
   if (automationShare >= 0.6) {
     type = "automation";
-    rationale = `${Math.round(automationShare * 100)}% of sessions are non-interactive \`codex exec\` runs — judged as an automation pipeline, not a conversation.`;
+    rationale = {
+      en: `${Math.round(automationShare * 100)}% of sessions are non-interactive codex exec runs, so this is judged as an automation pipeline.`,
+      zh: `${Math.round(automationShare * 100)}% 的会话是非交互式 codex exec 运行，因此按自动化流水线评估。`
+    };
   } else if (outcomes.fileEditCount === 0 && stats.humanMessages >= 4 && outcomes.proofCommands?.total === 0) {
     type = "learning";
-    rationale = "Conversation-heavy sessions with no file edits look exploratory.";
+    rationale = {
+      en: "Conversation-heavy sessions with no file edits or proof runs indicate learning or exploration.",
+      zh: "会话以讨论为主，没有文件编辑或验证运行，符合学习探索型项目。"
+    };
   } else if (stats.sessions >= 5 || stats.contextCompactions >= 2 || stats.humanMessages >= 30) {
     type = "long_running";
-    rationale = "Multiple sessions or compactions indicate a sustained collaboration.";
+    rationale = {
+      en: "Multiple sessions, many messages, or context compactions indicate sustained collaboration.",
+      zh: "多个会话、大量消息或上下文压缩表明这是持续协作项目。"
+    };
   } else if (outcomes.fileEditCount >= 4 || outcomes.distinctFilesTouched >= 3) {
     type = "feature_build";
-    rationale = "File edits and touched files indicate implementation work.";
+    rationale = {
+      en: "The edit volume and number of touched files indicate implementation work.",
+      zh: "文件编辑量和触及文件数量表明这是实现型工作。"
+    };
   } else {
     type = "one_shot";
-    rationale = "Few sessions or messages; judged with lighter engineering expectations.";
+    rationale = {
+      en: "The small number of sessions and messages fits a focused one-shot task.",
+      zh: "会话和消息数量较少，符合聚焦的一次性任务。"
+    };
   }
   const profile = rubric.profiles[type] || rubric.profiles.one_shot;
   const naDimensions = [...(profile.naDimensions || [])];
@@ -965,6 +1069,17 @@ function messageInterestScore(message) {
 }
 
 function buildEvidence(state) {
+  const evidenceText = (message, max) => {
+    if (state.privacyMode === "strict") {
+      const features = Object.keys(message.features || {}).filter((key) => message.features[key]);
+      return `[content omitted in strict mode; signals: ${features.join(", ") || "none"}]`;
+    }
+    return clip(redactSensitiveText(message.text), max);
+  };
+  const commandText = (command, max) => state.privacyMode === "strict"
+    ? "[command omitted in strict mode]"
+    : clip(redactSensitiveText(command), max);
+
   // --- stratified key messages across three time windows ---
   const all = state.humanMessages;
   const interesting = all.filter((message) => messageInterestScore(message) >= 1);
@@ -993,7 +1108,7 @@ function buildEvidence(state) {
       role: "user",
       sessionId: message.sessionId,
       timestamp: message.timestamp,
-      snippet: clip(message.text, 400),
+      snippet: evidenceText(message, 400),
       features: Object.keys(message.features).filter((key) => message.features[key]),
       after: message.after
     });
@@ -1019,7 +1134,7 @@ function buildEvidence(state) {
       role: "shell",
       sessionId: [...failure.sessions][0] || null,
       timestamp: null,
-      snippet: `${clip(failure.command, 160)} → exit ${failure.lastExitCode} (${failure.failures}× failed)`,
+      snippet: `${commandText(failure.command, 160)} → exit ${failure.lastExitCode} (${failure.failures}× failed)`,
       features: ["commandFailure"],
       after: null
     });
@@ -1027,10 +1142,12 @@ function buildEvidence(state) {
 
   // --- critical incidents ---
   const incidents = [];
+  let incidentSeq = 0;
+  const addIncident = (incident) => incidents.push({ id: `i${++incidentSeq}`, ...incident });
   for (const failure of topFailures.filter((entry) => entry.failures >= 2).slice(0, 4)) {
-    incidents.push({
+    addIncident({
       type: "command_retry_churn",
-      summary: `Command failed ${failure.failures}× across ${failure.sessions.size} session(s): ${clip(failure.command, 120)}`,
+      summary: `Command failed ${failure.failures}× across ${failure.sessions.size} session(s): ${commandText(failure.command, 120)}`,
       sessionIds: [...failure.sessions].slice(0, 3),
       evidenceRefs: [failureAtomIds.get(failure.command)].filter(Boolean)
     });
@@ -1039,24 +1156,26 @@ function buildEvidence(state) {
     .sort((a, b) => messageInterestScore(b) - messageInterestScore(a))
     .slice(0, 4);
   for (const message of correctionMessages) {
-    incidents.push({
+    addIncident({
       type: "correction",
-      summary: `User course-corrected: ${clip(message.text, 140)}`,
+      summary: `User course-corrected: ${evidenceText(message, 140)}`,
       sessionIds: [message.sessionId],
       evidenceRefs: [atomIdByMessageIndex.get(message.index)].filter(Boolean)
     });
   }
   const abortedSessions = state.sessions.filter((session) => session.abortedTurns > 0).slice(0, 2);
   for (const session of abortedSessions) {
-    incidents.push({
+    addIncident({
       type: "aborted_turns",
-      summary: `${session.abortedTurns} aborted turn(s) in session ${session.threadName || session.id}`,
+      summary: `${session.abortedTurns} aborted turn(s) in session ${
+        state.privacyMode === "strict" ? session.id : (session.threadName || session.id)
+      }`,
       sessionIds: [session.id],
       evidenceRefs: []
     });
   }
   if (state.contextCompactions >= 2) {
-    incidents.push({
+    addIncident({
       type: "context_pressure",
       summary: `${state.contextCompactions} context compactions across the project — sessions run long enough to lose context.`,
       sessionIds: [],
@@ -1072,7 +1191,7 @@ function buildEvidence(state) {
   const episodes = episodeSessions.map((session) => ({
     sessionId: session.id,
     kind: session.kind,
-    threadName: session.threadName,
+    threadName: state.privacyMode === "strict" ? null : session.threadName,
     startedAt: session.timestamp,
     endedAt: session.lastEventAt,
     durationMinutes: durationMinutes(session.timestamp, session.lastEventAt),
@@ -1088,15 +1207,15 @@ function buildEvidence(state) {
     planUpdates: session.planUpdates,
     planCompletion: session.lastPlan,
     corrections: session.corrections,
-    firstUserMessage: session.firstUserMessage,
-    lastAgentMessage: session.lastAgentMessage
+    firstUserMessage: state.privacyMode === "strict" ? null : session.firstUserMessage,
+    lastAgentMessage: state.privacyMode === "strict" ? null : session.lastAgentMessage
   }));
 
   const keyMessages = selected.map((message) => ({
     timestamp: message.timestamp,
     sessionId: message.sessionId,
     atomId: atomIdByMessageIndex.get(message.index),
-    text: clip(message.text, 400),
+    text: evidenceText(message, 400),
     features: Object.keys(message.features).filter((key) => message.features[key]),
     after: message.after
   }));
@@ -1189,86 +1308,6 @@ function loadSelfBaseline() {
     if (raw && raw.schemaVersion === "self-baseline-1") return raw;
   } catch { /* absent or unreadable — fine */ }
   return null;
-}
-
-// ---------------------------------------------------------------------------
-// Baseline computation (the deterministic half of the score).
-// The formulas here are the executable versions of rubric.json's
-// baselineFormula strings — keep the two in sync.
-// ---------------------------------------------------------------------------
-
-function computeBaselines(facts) {
-  const d = facts.signalsByPosition.directing.ratios;
-  const o = facts.signalsByPosition.opening.ratios;
-  const correcting = facts.signalsByPosition.correcting;
-  const confirming = facts.signalsByPosition.confirming;
-  const stats = facts.stats;
-  const tc = facts.toolcraftSummary;
-  const out = facts.outcomeTotals;
-  const assets = facts.projectAssets;
-  const successRate = tc.commandSuccessRate ?? 0.5; // neutral when unmeasurable
-  const correctionSubstance = correcting.substanceRatio ?? 0.5; // no corrections at all — neutral
-  const confirmShare = ratio(confirming.messageCount, Math.max(1, stats.humanMessages));
-
-  const raw = {
-    lock_on: 35 + d.explicitGoal * 20 + d.expectedBehavior * 18 + d.filePath * 18
-      + d.constraints * 10 + d.errorLog * 8
-      - Math.max(0, 90 - stats.averageHumanMessageLength) * 0.08,
-    scene_setting: 30 + o.expectedBehavior * 22 + o.constraints * 16 + o.filePath * 16
-      + o.codeOrData * 14 + clamp(stats.averageHumanMessageLength / 7, 0, 12),
-    steering: 38 + d.asksVerify * 20 + correctionSubstance * 16
-      + Math.min(10, confirmShare * 30) + d.errorLog * 8 - out.abortRatio * 12,
-    toolcraft: 30 + Math.min(20, facts.toolcraftSummary.byCategory.length * 4)
-      + successRate * 18 + Math.min(12, tc.planUpdates * 3)
-      + Math.min(10, tc.webSearchCalls + tc.browserCalls + tc.mcpCalls)
-      + Math.min(10, tc.subagentCalls * 3),
-    architecture: 25 + (assets.hasAgentsMd ? 20 : 0)
-      + ((assets.hasCodexDir || assets.hasAgentsDir) ? 12 : 0)
-      + (assets.hasGit ? 12 : 0) + (assets.hasManifest ? 12 : 0)
-      + (assets.hasReadme ? 8 : 0) + (assets.hasTestsDir ? 8 : 0)
-      + Math.min(8, assets.rootEntryCount / 8),
-    tempo: 72 - out.abortRatio * 28 - Math.min(14, stats.contextCompactions * 3)
-      - Math.min(12, stats.errors * 3) + Math.min(10, out.cleanEndRatio * 10)
-      - Math.max(0, out.toolsPerHumanMsg - 10) * 2,
-    efficiency: 35 + Math.min(24, out.editsPerHumanMsg * 18)
-      + Math.min(16, out.filesPerHumanMsg * 18) + successRate * 12
-      + out.cleanEndRatio * 10 - Math.max(0, out.toolsPerHumanMsg - 12) * 2,
-    proof_check: 28 + Math.min(34, out.proofCommands.passed * 8 + out.proofCommands.failed * 4 + out.proofCommands.unknown * 2)
-      + d.asksVerify * 18 + (assets.hasTestsDir ? 8 : 0)
-      + Math.min(12, tc.browserCalls + tc.viewImageCalls),
-    completion: 45 + out.cleanEndRatio * 35
-      + Math.min(10, (stats.agentMessages / Math.max(1, stats.turnCompletes)) * 3)
-      - out.abortRatio * 18 - Math.min(8, stats.errors * 2)
-  };
-
-  const naSet = new Set(facts.projectProfile.naDimensions);
-  const result = {};
-  for (const [id, value] of Object.entries(raw)) {
-    if (naSet.has(id)) {
-      result[id] = { applicable: false, baseline: null, confidenceScaled: null, naReason: naReasonFor(id, facts) };
-      continue;
-    }
-    const baseline = Math.round(clamp(value, 0, 100));
-    result[id] = {
-      applicable: true,
-      baseline,
-      confidenceScaled: Math.round(scaleByConfidence(baseline, facts.confidenceLevel))
-    };
-  }
-  return result;
-}
-
-function naReasonFor(id, facts) {
-  if (id === "architecture" && !facts.projectAssets.cwdResolved) {
-    return "The recorded project directory could not be located on this machine.";
-  }
-  return `Not applicable for the '${facts.projectProfile.type}' project profile.`;
-}
-
-function scaleByConfidence(baseline, level) {
-  if (level === "low") return 50 + (baseline - 50) * 0.75;
-  if (level === "medium") return 50 + (baseline - 50) * 0.9;
-  return baseline;
 }
 
 // ---------------------------------------------------------------------------

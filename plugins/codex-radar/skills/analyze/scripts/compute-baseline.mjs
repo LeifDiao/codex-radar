@@ -9,7 +9,7 @@
 //   --refresh   force a rebuild
 import fs from "node:fs";
 import path from "node:path";
-import { allSessionFiles, eachJsonLine, ensureDir, RADAR_HOME, readSessionMeta } from "./lib.mjs";
+import { allSessionFiles, eachJsonLine, RADAR_HOME, readSessionMeta, writeFilePrivate } from "./lib.mjs";
 import { classifyMessage, isProofCommand, parseExecArguments, sessionKindFromMeta } from "./signals.mjs";
 
 const MAX_FILES = 400;
@@ -29,8 +29,11 @@ if (args.has("--if-stale") && !args.has("--refresh")) {
 }
 
 const files = await allSessionFiles();
-const step = Math.max(1, Math.floor(files.length / MAX_FILES));
-const sampled = files.filter((_, index) => index % step === 0).slice(0, MAX_FILES);
+const sampled = files.length <= MAX_FILES
+  ? files
+  : Array.from({ length: MAX_FILES }, (_, index) => (
+      files[Math.floor(index * (files.length - 1) / (MAX_FILES - 1))]
+    ));
 
 const byKind = { interactive: [], automation: [] };
 for (const file of sampled) {
@@ -65,8 +68,7 @@ const result = {
   automation: metricsFor(byKind.automation)
 };
 
-ensureDir(path.dirname(cachePath));
-fs.writeFileSync(cachePath, JSON.stringify(result, null, 2) + "\n");
+writeFilePrivate(cachePath, JSON.stringify(result, null, 2) + "\n");
 console.log(JSON.stringify({ cachePath, status: "rebuilt", sessionsSampled: result.sessionsSampled }));
 
 async function sessionMetrics(file) {

@@ -47,16 +47,29 @@ export function classifyMessage(text) {
 const PROOF_PATTERNS = [
   /\b(npm|pnpm|yarn|bun)\s+(run\s+)?(test|build|check|lint|typecheck|e2e|coverage)\b/i,
   /\bnode\s+--test\b/i,
-  /\b(pytest|ruff|mypy|flake8|tox)\b/i,
+  /\b(?:uv|poetry|pipenv)\s+run\s+(?:pytest|ruff|mypy|flake8|tox)\b/i,
+  /\b(pytest|ruff|mypy|flake8|tox|coverage\s+run)\b/i,
   /\bcargo\s+(test|check|clippy|build)\b/i,
   /\bgo\s+(test|vet|build)\b/i,
-  /\b(swift\s+test|xcodebuild)\b/i,
+  /\bswift\s+(test|build)\b/i,
+  /\bxcodebuild\b[\s\S]*\b(test|build|archive|analyze)\b/i,
   /\b(vitest|jest|playwright|cypress|mocha|ava)\b/i,
   /\btsc\b(?!\S)/i,
   /\b(eslint|stylelint|prettier\s+--check|biome\s+(check|lint))\b/i,
   /\bmake\s+(test|check|lint|build)\b/i,
-  /\b(mvn|gradle)\s+(test|verify|check|build)\b/i,
-  /\bpython3?\s+-m\s+(pytest|unittest)\b/i
+  /(?:^|\s)(?:\.\/)?mvnw?\s+(test|verify|check|package)\b/i,
+  /(?:^|\s)(?:\.\/)?gradlew?\s+(test|check|build|lint)\b/i,
+  /\bpython3?\s+-m\s+(pytest|unittest)\b/i,
+  /\bdotnet\s+(test|build)\b/i,
+  /\b(?:bundle\s+exec\s+)?rspec\b/i,
+  /\b(?:bundle\s+exec\s+)?rake\s+(test|spec)\b/i,
+  /\b(?:vendor\/bin\/)?phpunit\b/i,
+  /\bcomposer\s+(test|check|lint|analyse|analyze)\b/i,
+  /\bmix\s+(test|compile|format\s+--check-formatted)\b/i,
+  /\bflutter\s+(test|analyze|build)\b/i,
+  /\bdart\s+(test|analyze)\b/i,
+  /\bdeno\s+(test|check|lint)\b/i,
+  /\b(ctest|ninja\s+(test|check)|cmake\s+--build)\b/i
 ];
 
 export function isProofCommand(command) {

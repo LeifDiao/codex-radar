@@ -644,7 +644,9 @@
     verifyBy: { en: 'Verify next run:', zh: '下次运行验证：' },
     copy: { en: 'Copy', zh: '复制' }, copied: { en: 'Copied', zh: '已复制' },
     sinceLast: { en: 'vs last run', zh: '较上次' },
-    baseline: { en: 'baseline', zh: '公式基线' }, adjustment: { en: 'evidence adjustment', zh: '证据微调' },
+    formulaBaseline: { en: 'formula baseline', zh: '公式基线' },
+    startingScore: { en: 'confidence-scaled start', zh: '置信度起始分' },
+    adjustment: { en: 'evidence adjustment', zh: '证据微调' },
     incidentsTitle: { en: 'Friction points', zh: '卡壳点' },
     episodesTitle: { en: 'Recent sessions', zh: '近期会话' },
     atomsTitle: { en: 'Cited evidence', zh: '引用的证据' },
@@ -663,7 +665,7 @@
     assets: { en: 'Project assets', zh: '项目资产' },
     assetsUnresolved: { en: 'Project working directory not located — asset detection skipped.', zh: '未能定位项目工作目录，跳过资产检测。' },
     runs: { en: 'runs', zh: '次运行' },
-    footer: { en: 'Codex Radar — local analysis, zero telemetry. Formulas computed in code; adjustments cited to evidence.', zh: 'Codex Radar — 全本地分析，零数据上传。公式基线由代码计算，微调逐条引用证据。' }
+      footer: { en: 'Codex Radar — private local artifacts; model interpretation follows your Codex settings. Formulas are computed in code and adjustments cite evidence.', zh: 'Codex Radar — 本地产物使用私有权限；模型解释遵循你的 Codex 设置。公式由代码计算，微调逐条引用证据。' }
   };
 
   let report;
@@ -692,6 +694,7 @@
     return String(s).slice(0, 100);
   }
   function boldify(s) { return esc(s).replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>'); }
+  function safeClassToken(s, allowed, fallback) { return allowed.includes(s) ? s : fallback; }
   function deltaBadge(v, withLabel) {
     if (v == null || !isFinite(v) || Math.round(v) === 0) return '';
     const r = Math.round(v);
@@ -699,7 +702,8 @@
   }
   function scoreChip(grade, score) {
     if (grade == null) return '';
-    return '<span class="score-chip" data-grade="' + grade + '">' + grade + (score != null ? ' · ' + score : '') + '</span>';
+    const safeGrade = safeClassToken(grade, ['S', 'A', 'B', 'C', 'D'], 'D');
+    return '<span class="score-chip" data-grade="' + safeGrade + '">' + safeGrade + (score != null ? ' · ' + esc(score) : '') + '</span>';
   }
   const dimById = {};
   (report.dimensions || []).forEach(d => { dimById[d.id] = d; });
@@ -728,7 +732,7 @@
     const grade = report.overallGrade || gradeFromScore(report.overallScore);
 
     document.getElementById('topbarProject').innerHTML =
-      '<strong>' + esc(report.project) + '</strong> · ' + fmtDate(report.generatedAt);
+      '<strong>' + esc(report.project) + '</strong> · ' + esc(fmtDate(report.generatedAt));
 
     renderBanner();
 
@@ -877,9 +881,10 @@
     const dim = s.dimensionId ? dimById[s.dimensionId] : null;
     const refs = (s.evidenceRefs || []).map(r => '<span class="evidence-ref" data-ref="' + esc(r) + '">' + esc(r) + '</span>').join('');
     const steps = Array.isArray(s.steps) ? s.steps : null;
+    const priority = safeClassToken(s.priority, ['high', 'medium', 'low'], 'medium');
     let html =
       '<div class="sugg-head">' +
-        '<span class="pill pill-' + (s.priority || 'medium') + '">' + esc(s.priority || 'medium') + '</span>' +
+        '<span class="pill pill-' + priority + '">' + esc(priority) + '</span>' +
         (typeLabel ? '<span class="pill pill-type">' + esc(typeLabel) + '</span>' : '') +
         (dim ? '<span class="pill pill-dim">' + esc(t(dim.name)) + '</span>' : '') +
         '<div class="sugg-title">' + esc(t(s.title)) + '</div>' +
@@ -924,9 +929,10 @@
       } else {
         const d = document.createElement('details');
         d.className = 'sugg-fold';
+        const priority = safeClassToken(s.priority, ['high', 'medium', 'low'], 'medium');
         d.innerHTML =
           '<summary>' +
-            '<span class="pill pill-' + (s.priority || 'medium') + '">' + esc(s.priority || 'medium') + '</span>' +
+            '<span class="pill pill-' + priority + '">' + esc(priority) + '</span>' +
             '<span class="sugg-row-title">' + esc(t(s.title)) + '</span>' +
             '<span class="sugg-row-summary">' + esc(suggSummary(s)) + '</span>' +
             '<span class="sugg-chevron">▶</span>' +
@@ -969,8 +975,13 @@
         const isNA = d.applicable === false || d.score == null;
         const g = d.grade || (d.score != null ? gradeFromScore(d.score) : null);
         const dimDelta = report.delta && report.delta.dimensions ? report.delta.dimensions[d.id] : null;
-        const formula = (!isNA && typeof d.baseline === 'number')
-          ? '<div class="dim-formula">' + tc('baseline') + ' ' + d.baseline +
+        const formulaBaseline = typeof d.formulaBaseline === 'number' ? d.formulaBaseline : d.baseline;
+        const startingScore = typeof d.startingScore === 'number' ? d.startingScore : d.baseline;
+        const formula = (!isNA && typeof formulaBaseline === 'number')
+          ? '<div class="dim-formula">' + tc('formulaBaseline') + ' ' + formulaBaseline +
+            (typeof startingScore === 'number' && startingScore !== formulaBaseline
+              ? ' · ' + tc('startingScore') + ' ' + startingScore
+              : '') +
             (typeof d.adjustment === 'number' && d.adjustment !== 0 ? ' · ' + (d.adjustment > 0 ? '+' : '') + d.adjustment + ' ' + tc('adjustment') : '') +
             ' → ' + d.score + '</div>'
           : '';

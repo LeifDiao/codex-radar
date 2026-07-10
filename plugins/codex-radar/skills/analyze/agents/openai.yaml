@@ -1,7 +1,7 @@
 interface:
   display_name: "Codex Radar"
-  short_description: "Score your Codex collaboration, locally"
-  default_prompt: "Use $codex-radar to score how I collaborate with Codex on this project."
+  short_description: "Evidence-grounded Codex collaboration report"
+  default_prompt: "Use $codex-radar to analyze how I collaborate with Codex on the current project."
 
 policy:
   allow_implicit_invocation: true

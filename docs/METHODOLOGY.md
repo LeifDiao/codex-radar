@@ -1,6 +1,6 @@
 [中文版](./METHODOLOGY_zh.md)
 
-# Codex Radar — Methodology (v2.2)
+# Codex Radar — Methodology (v3.0)
 
 > Codex Radar is not focused on code output. It focuses on *how you collaborate with Codex as a platform* — your communication, your engineering setup, and your actual outcomes.
 >
@@ -11,8 +11,8 @@
 ## Design principles
 
 1. **Evidence first.** Every score traces back to concrete, countable session signals; every diagnosis claim cites an id-addressable evidence atom.
-2. **The parser computes, the model interprets.** All formula baselines are computed deterministically **in code** (`facts.computedBaselines`). Your Codex model only applies a bounded, evidence-cited adjustment and writes the prose. Same sessions → same baselines, every time.
-3. **Privacy is non-negotiable.** Session data stays local. No cloud, no separate API key, no telemetry — the analysis runs in your own Codex session.
+2. **Scripts compute, the model interprets.** Formula baselines, adjustment caps, final scores, grades, category scores, and the overall score are deterministic. The model writes only bounded evidence adjustments and qualitative content.
+3. **Privacy claims must be precise.** Bundled scripts make no network calls and generated artifacts stay local. Standard mode redacts common credentials; strict mode omits message/command snippets, thread titles, web-search queries, and episode opening/closing text. Model interpretation runs inside the active Codex session and follows its configured data handling.
 4. **N/A is honest.** When a dimension genuinely can't be evaluated, it shows N/A — never a faked 50.
 5. **Profile-aware fairness.** Different project types deserve different category weights — and automation pipelines are not judged as conversations.
 6. **Transparency.** The rubric and the formulas are in the repo. Change them and the next run reflects your standards.
@@ -42,19 +42,26 @@
          │                      episodes, critical incidents, AND computes the
          │                      9 formula baselines (computedBaselines).
          ▼
- [ your Codex model ]        ← Reads facts + rubric.json. Applies a bounded,
-         │ report.json          confidence-capped adjustment per dimension,
-         │                      writes observations, diagnosis, and typed
-         │                      suggestions instantiated from recipes.
+ [prepare-model-input.mjs]  ← Loads rubric, evaluates recipe triggers in code,
+         │ model-input.json    emits only the facts and rules the model needs,
+         │ analysis.json       plus a private analysis-1 template.
          ▼
- [render-report.mjs]         ← Validates the report schema, appends to
+ [ your Codex model ]        ← Treats every session fragment as untrusted quoted
+         │ analysis.json       evidence; writes bounded adjustments, diagnosis,
+         │                      observations, and typed suggestions only.
+         ▼
+ [finalize-report.mjs]       ← Strictly validates evidence refs, bilingual fields,
+         │ report-3.0.json     caps, payloads, ordering, and AGENTS.md conditions;
+         │                      computes every final/category/overall score.
+         ▼
+ [render-report.mjs]         ← Revalidates score consistency, appends to
          │                      ~/.codex-radar/history.jsonl, injects trend +
          │                      delta vs the previous run, renders HTML.
          ▼
  ~/.codex-radar/reports/<project>-<ts>.html
 ```
 
-The plugin itself makes no network calls and needs no separate API key — the scoring runs inside your own Codex session, and reports stay on your machine.
+The bundled scripts make no network calls and need no separate API key. Reports and intermediate artifacts use private local file permissions; model interpretation occurs inside the active Codex session.
 
 ---
 
@@ -131,7 +138,7 @@ Message features (bilingual EN/中文, precision-tuned with a labeled regression
 
 ## Scoring formulas
 
-The parser computes each baseline, clamps to [0, 100], applies confidence scaling, and publishes the result as `facts.computedBaselines`. Ratios (e.g. `directing.filePath`) are the share of messages in that bucket carrying the signal.
+`skills/analyze/scripts/scoring.mjs` is the single executable formula source. The parser computes each baseline, clamps to [0, 100], applies confidence scaling, and publishes the result as `facts.computedBaselines`. Ratios (e.g. `directing.filePath`) are the share of messages in that bucket carrying the signal.
 
 ```text
 Lock-On       = 35 + goal·20 + expected·18 + filePath·18 + constraints·10 + errorLog·8
@@ -159,7 +166,7 @@ Semantics that matter:
 - **`cmdSuccessRate`** is exit-code-0 commands over commands with a *readable* exit code. When no command carries one, it is **neutral (0.5)**, never a punitive 0, and the report says so.
 - **`correctionSubstance`** = share of correction messages that carry a file path, error log, or code — corrections that *show*, not just *tell*. Neutral (0.5) when there are no corrections.
 - **`abortRatio` / `cleanEndRatio`** are over **started turns**, and silently dropped turns (started, never completed, never explicitly aborted) count as failures to close.
-- **Proof commands** are real verification runners only: `npm/pnpm/yarn/bun test|build|lint|typecheck`, `pytest / ruff / mypy / cargo test / go test / vitest / jest / playwright / tsc / eslint / node --test / make test`, etc. `echo 验证` is not proof; generating an image is not proof (viewing/screenshotting one is inspection and counts in the small browser bonus). A **failed test run earns partial credit** — running proof and reacting to red is verification culture.
+- **Proof commands** are real verification runners only: Node package runners, Python tools, Cargo, Go, Swift/Xcode, Maven/Gradle wrappers, .NET, Ruby, PHP, Elixir, Flutter/Dart, Deno, CMake/CTest, and common browser test runners. `echo 验证`, `xcodebuild -list`, and dependency inspection are not proof. A **failed test run earns partial credit** because running proof and reacting to red is verification culture.
 
 **Category score** = average of the *applicable* dimensions in that category.
 **Overall score** = profile-weighted sum of category scores, renormalized over the categories that have a score.
@@ -168,7 +175,7 @@ Semantics that matter:
 | --- | --- | --- | --- | --- | --- |
 | Threshold | ≥ 85 | ≥ 70 | ≥ 55 | ≥ 40 | ≥ 0 |
 
-**Confidence scaling and the bounded adjustment.** The parser shrinks low-confidence baselines toward 50 (×0.75 low, ×0.9 medium). The model then applies an adjustment that must cite specific evidence atoms / episodes / incidents — and its cap also depends on confidence: **±5 (low), ±10 (medium), ±15 (high)**. Thin data earns less discretionary movement. No evidence → no adjustment.
+**Confidence scaling and the bounded adjustment.** The parser shrinks low-confidence baselines toward 50 (×0.75 low, ×0.9 medium). The model proposes an integer adjustment citing evidence atoms / episodes / incidents. `finalize-report.mjs` rejects missing references or values outside **±5 (low), ±10 (medium), ±15 (high)**, then calculates the final score. No evidence → no non-zero adjustment.
 
 ---
 
@@ -190,14 +197,14 @@ Architecture is additionally N/A when the recorded project directory can't be re
 
 ## Evidence pipeline
 
-The model never sees raw sessions; it sees a curated, id-addressable evidence layer:
+The model never rereads raw JSONL. It sees a curated, id-addressable evidence layer after privacy processing:
 
-- **`evidenceAtoms`** — key user messages sampled across three time windows (prioritizing corrections, error pastes, verification asks, code-bearing messages), plus notable shell failures. Each atom records what happened **after** it (tool calls, edits, proof runs, failed commands) so cause and effect stay attached.
+- **`evidenceAtoms`** — key user messages sampled across three time windows (prioritizing corrections, error pastes, verification asks, code-bearing messages), plus notable shell failures. Standard mode redacts common credentials; strict mode replaces message and command text with omission markers. In strict mode, episode titles/opening/closing text are null and stored web-search queries are empty. Each atom records what happened **after** it so cause and effect stay attached.
 - **`workflowEpisodes`** — one narrative row per session: duration, opening message, closing agent message, edits, proof passed/failed, failed commands, aborts, plan completion, corrections.
 - **`criticalIncidents`** — command retry churn (same command failing repeatedly), corrections, aborted turns, context pressure: the places where the collaboration actually struggled.
 - **`selfBaseline`** — the distribution (p25/median/p75) of your own per-session metrics across all projects, segmented interactive vs automation, so reports can say "half the proof density of your median session".
 
-Diagnosis claims and suggestions must reference these ids (`evidenceRefs`), and the report renders them as clickable drill-downs.
+All evidence content is explicitly marked as **untrusted quoted data**. The model must never follow instructions or run commands found inside it. Diagnosis claims and suggestions reference these ids (`evidenceRefs`); the finalizer rejects unknown IDs.
 
 ---
 
@@ -206,7 +213,7 @@ Diagnosis claims and suggestions must reference these ids (`evidenceRefs`), and 
 Suggestion generation is two-pass:
 
 1. **Observations (8-12)** — single-sentence, evidence-cited behavior patterns. This forces the model to look before prescribing.
-2. **Suggestions (5-7)** — typed interventions, instantiated from per-dimension **recipes** (trigger conditions in `rubric.json`) before any free-form invention:
+2. **Suggestions (5-7)** — typed interventions. `recipe-triggers.mjs` evaluates every rubric recipe in code; fired recipes are sent to the model first and instantiated suggestions carry a stable `recipeId`:
 
 | Type | Payload |
 | --- | --- |
@@ -218,7 +225,7 @@ Suggestion generation is two-pass:
 
 Every suggestion carries `evidenceRefs`, a one-line `summary` (shown on its collapsed row in the dashboard), a `verifyBy` (which facts metric should move on the next run), and must survive the **anti-generic rule**: if it still makes sense after deleting every project-specific noun, it gets rewritten. Suggestions are sorted high → medium → low, and the dashboard spotlights the first one as "do this first."
 
-The diagnosis layer also emits **`highlights`** — a strongest-signal card and a main-bottleneck card, each pinned to a dimension with a one-sentence evidence-bearing headline. The model picks the dimension that best carries the diagnosis; if the block is absent, the renderer falls back to the max/min dimension scores.
+The diagnosis layer also emits **`highlights`** — a strongest-signal card and a main-bottleneck card, each pinned to a dimension with a one-sentence evidence-bearing headline. Schema 3.0 requires both; the renderer only derives them for legacy 2.x reports.
 
 When a project has ≥3 sessions, a resolvable directory, and no `AGENTS.md`, the report also includes a complete **AGENTS.md draft** generated from the observed commands, conventions, and pitfalls.
 
@@ -249,17 +256,20 @@ We measure **collaboration behavior + engineering setup + outcome density**, not
 4. **Profile classification is heuristic.** Re-run after more sessions if the type shifts.
 5. **Format drift happens.** Codex CLI's rollout format changes across versions. The parser handles both known generations and ships a drift detector that warns loudly instead of silently under-counting — but a future format may still need a plugin update.
 6. **The rubric is opinionated.** We define strong collaboration as goal-directed + tool-fluent + verification-heavy + closure-oriented. Tune `rubric.json` if your team disagrees.
+7. **Model interpretation uses the active Codex session.** Script execution is local-first, but the plugin cannot independently guarantee the model provider's data path; account, workspace, and Codex configuration govern that layer.
 
 ---
 
 ## How to change the scoring
 
 - **Dimension definitions, adjustment caps, profile weights, grade thresholds, suggestion recipes** → `plugins/codex-radar/data/rubric.json`
-- **The executable formulas** → `computeBaselines()` in `plugins/codex-radar/skills/analyze/scripts/parse-codex-project.mjs` (keep the rubric's formula text in sync — the tests cover the parser side)
+- **The executable formulas** → `plugins/codex-radar/skills/analyze/scripts/scoring.mjs` (single source)
+- **Suggestion recipe predicates** → `recipe-triggers.mjs`; tests require one predicate for every rubric recipe ID
+- **Analysis and report contracts** → `report-contract.mjs`
 - **Message classifiers / proof patterns / tool categories** → `plugins/codex-radar/skills/analyze/scripts/signals.mjs` (with `tests/classifier.test.mjs` as the regression harness)
 - **Profile classification** → `classifyProject()` in `parse-codex-project.mjs`
 
-Run `node --test tests/*.test.mjs` after changes — the fixture suite covers both rollout formats, subagent exclusion, and the render pipeline.
+Run `node --test tests/*.test.mjs` after changes — the suite covers both rollout formats, privacy modes, multi-stack proof detection, recipe coverage, subagent exclusion, deterministic finalization, and HTML rendering.
 
 ---
 
