@@ -147,3 +147,6 @@ vite.config.ts.timestamp-*
 
 # macOS folder icon artifacts
 Icon?
+
+# Internal planning notes — kept local, not published.
+docs/ITERATION_PLAN.md
