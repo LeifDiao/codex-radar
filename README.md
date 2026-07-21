@@ -2,7 +2,7 @@
 
 > **A Codex plugin that reads local Codex session history and diagnoses how well you collaborate with the agent.** 9 dimensions across 3 categories — Communication, Engineering, Outcome. Deterministic scripts extract facts, calculate every score, enforce the report contract, and render a single-file HTML dashboard; your active Codex session contributes only bounded evidence adjustments and the qualitative diagnosis.
 
-🌏 [中文版](./README_zh.md) · 📖 [Methodology](./docs/METHODOLOGY.md) · 🖥 [Live preview](https://leifdiao.github.io/codex-radar/) · ⚖️ [License](./LICENSE)
+🌏 [中文版](./README_zh.md) · 📖 [Methodology](./docs/METHODOLOGY.md) · 🖥 [Live preview](https://lemomo-ai.github.io/codex-radar/) · ⚖️ [License](./LICENSE)
 
 > **中文简介：** 一款 Codex 插件，读取本地 Codex 会话记录，从「沟通力 / 工程力 / 成效」三个层面、9 个维度评估协作质量。确定性脚本负责事实提取、全部分数计算、报告契约校验与 HTML 渲染；当前 Codex 会话只负责有界证据微调和定性诊断。完整中文文档 → [README_zh.md](./README_zh.md)
 
@@ -68,7 +68,7 @@ Every dimension row expands into its formula baseline, the bounded evidence-cite
 **Step 1** — Add the marketplace (this repo is itself a Codex marketplace):
 
 ```bash
-codex plugin marketplace add LeifDiao/codex-radar
+codex plugin marketplace add lemomo-ai/codex-radar
 ```
 
 **Step 2** — Install the plugin:
@@ -80,7 +80,7 @@ codex plugin add codex-radar@codex-radar-marketplace
 **Alternative (local checkout):**
 
 ```bash
-git clone https://github.com/LeifDiao/codex-radar.git ~/codex-radar
+git clone https://github.com/lemomo-ai/codex-radar.git ~/codex-radar
 codex plugin marketplace add ~/codex-radar
 codex plugin add codex-radar@codex-radar-marketplace
 ```

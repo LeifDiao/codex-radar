@@ -1,6 +1,6 @@
 # Codex Radar — plugin payload
 
-This is the plugin installed by the Codex Radar marketplace. For the project overview, install steps, and methodology, see the [repository README](https://github.com/LeifDiao/codex-radar).
+This is the plugin installed by the Codex Radar marketplace. For the project overview, install steps, and methodology, see the [repository README](https://github.com/lemomo-ai/codex-radar).
 
 ## Use
 

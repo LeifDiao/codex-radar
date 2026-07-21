@@ -5,10 +5,10 @@
   "author": {
     "name": "Leif Diao",
     "email": "leifdiao@gmail.com",
-    "url": "https://github.com/LeifDiao"
+    "url": "https://github.com/lemomo-ai"
   },
-  "homepage": "https://leifdiao.github.io/codex-radar/",
-  "repository": "https://github.com/LeifDiao/codex-radar",
+  "homepage": "https://lemomo-ai.github.io/codex-radar/",
+  "repository": "https://github.com/lemomo-ai/codex-radar",
   "license": "CC-BY-NC-4.0",
   "skills": "./skills/",
   "keywords": [
@@ -34,8 +34,8 @@
       "Create a Codex Radar report"
     ],
     "brandColor": "#2563EB",
-    "websiteURL": "https://leifdiao.github.io/codex-radar/",
-    "privacyPolicyURL": "https://github.com/LeifDiao/codex-radar#privacy",
-    "termsOfServiceURL": "https://github.com/LeifDiao/codex-radar/blob/main/LICENSE"
+    "websiteURL": "https://lemomo-ai.github.io/codex-radar/",
+    "privacyPolicyURL": "https://github.com/lemomo-ai/codex-radar#privacy",
+    "termsOfServiceURL": "https://github.com/lemomo-ai/codex-radar/blob/main/LICENSE"
   }
 }

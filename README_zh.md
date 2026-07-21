@@ -2,7 +2,7 @@
 
 > **一款 Codex 插件，读取本地 Codex 会话记录，评估你和 Codex 协作的质量。** 从「沟通力 / 工程力 / 成效」三个层面、9 个维度分析：确定性脚本提取事实、计算全部分数、校验报告契约并渲染单文件 HTML；当前 Codex 会话只负责有界证据微调和定性诊断。
 
-🌏 [English](./README.md) · 📖 [方法论](./docs/METHODOLOGY_zh.md) · 🖥 [在线预览](https://leifdiao.github.io/codex-radar/) · ⚖️ [协议](./LICENSE)
+🌏 [English](./README.md) · 📖 [方法论](./docs/METHODOLOGY_zh.md) · 🖥 [在线预览](https://lemomo-ai.github.io/codex-radar/) · ⚖️ [协议](./LICENSE)
 
 > **English summary:** A Codex plugin that analyzes local Codex session history across 9 dimensions. Deterministic scripts calculate and validate every score; the active Codex session writes bounded evidence adjustments and the qualitative diagnosis. Full English docs → [README.md](./README.md)
 
@@ -67,7 +67,7 @@
 **第一步** —— 添加插件市场（这个仓库本身就是一个 Codex marketplace）：
 
 ```bash
-codex plugin marketplace add LeifDiao/codex-radar
+codex plugin marketplace add lemomo-ai/codex-radar
 ```
 
 **第二步** —— 安装插件：
@@ -79,7 +79,7 @@ codex plugin add codex-radar@codex-radar-marketplace
 **本地安装：**
 
 ```bash
-git clone https://github.com/LeifDiao/codex-radar.git ~/codex-radar
+git clone https://github.com/lemomo-ai/codex-radar.git ~/codex-radar
 codex plugin marketplace add ~/codex-radar
 codex plugin add codex-radar@codex-radar-marketplace
 ```
